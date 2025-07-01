@@ -1,0 +1,23 @@
+networks:
+  backend:
+
+services:
+  postgres:
+    container_name: viewTrack-postgres
+    image: postgres:latest
+    restart: on-failure
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: viewTrack
+    ports:
+      - "5433:5432"
+    volumes:
+      - ../volumes/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U root -d viewTrack" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
