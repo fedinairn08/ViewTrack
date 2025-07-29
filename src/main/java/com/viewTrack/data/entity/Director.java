@@ -3,10 +3,8 @@ package com.viewTrack.data.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.Accessors;
-import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import static com.viewTrack.data.entity.AbstractEntity.DEFAULT_GENERATOR;
 
@@ -34,12 +32,4 @@ public class Director extends AbstractEntity {
     @ManyToOne
     @JoinColumn(name = "photo_id")
     private Image photo;
-
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "director_movies",
-            joinColumns = @JoinColumn(name = "director_id"),
-            inverseJoinColumns = @JoinColumn(name = "movie_id")
-    )
-    private List<Movie> movies;
 }

@@ -13,3 +13,14 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+    persist-authorization: true
+
+security:
+  jwt:
+    secret: 0a64e5a1d82fe604b5b3fd1f32a3c3dfee45511861901bd905fa9cb93dee424e42c74ee5f0fb61e67b6b72f00751951ce68ff9ac
+    access: ${ACCESS_JWT_TOKEN_AGE}
+    refresh: ${REFRESH_JWT_TOKEN_AGE}
