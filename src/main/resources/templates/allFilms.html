@@ -48,7 +48,7 @@
         <div th:each="movie : ${movies}"
              class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
             <img
-                    th:src="${movie.poster ?: 'https://via.placeholder.com/300x450'}"
+                    th:src="${movie.poster?.filename != null ? '/api/image/get/' + movie.poster.filename : 'https://via.placeholder.com/300x450'}"
                     th:alt="${movie.title}"
                     class="w-full h-64 object-cover" />
             <div class="p-4">
