@@ -29,7 +29,7 @@ public class AuthController {
                          Model model) {
         try {
             authService.signIn(username, password);
-            return "redirect:/allFilms";
+            return "redirect:/api/movie/all";
         } catch (ResourceNotFoundException e) {
             model.addAttribute("error", "Неверные учетные данные");
             return "/signIn";
