@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Регистрация</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex items-center justify-center h-screen bg-gray-100">
+<div class="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-xl">
+    <div class="text-center">
+        <h2 class="text-2xl font-bold text-gray-800">Создать аккаунт</h2>
+        <p class="mt-2 text-gray-600">Заполните форму, чтобы зарегистрироваться</p>
+    </div>
+
+    <div th:if="${error}" class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert" th:text="${error}"></div>
+
+    <form th:action="@{/api/auth/signUp}" method="post" class="space-y-6">
+        <!-- Email -->
+        <div>
+            <label for="username" class="block mb-2 text-sm font-medium text-gray-700">Email</label>
+            <input
+                    type="email"
+                    id="username"
+                    name="username"
+                    required
+                    class="block w-full px-3 py-2 border-b-2 border-gray-300 focus:border-purple-500 focus:outline-none"
+            />
+        </div>
+
+        <!-- Пароль -->
+        <div>
+            <label for="password" class="block mb-2 text-sm font-medium text-gray-700">Пароль</label>
+            <div class="relative">
+                <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        class="block w-full px-3 py-2 border-b-2 border-gray-300 focus:border-purple-500 focus:outline-none"
+                />
+                <button
+                        type="button"
+                        id="togglePassword"
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-400 hover:text-gray-500"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Имя -->
+        <div>
+            <label for="name" class="block mb-2 text-sm font-medium text-gray-700">Имя</label>
+            <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    class="block w-full px-3 py-2 border-b-2 border-gray-300 focus:border-purple-500 focus:outline-none"
+            />
+        </div>
+
+        <!-- Фамилия -->
+        <div>
+            <label for="surname" class="block mb-2 text-sm font-medium text-gray-700">Фамилия</label>
+            <input
+                    type="text"
+                    id="surname"
+                    name="surname"
+                    required
+                    class="block w-full px-3 py-2 border-b-2 border-gray-300 focus:border-purple-500 focus:outline-none"
+            />
+        </div>
+
+        <!-- Кнопки -->
+        <div class="space-y-4">
+            <button
+                    type="submit"
+                    class="w-full px-4 py-2 text-white bg-purple-600 rounded-md hover:bg-purple-700 transition-colors"
+            >
+                Зарегистрироваться
+            </button>
+            <a
+                    href="/api/auth/signIn"
+                    class="block w-full px-4 py-2 text-center text-white bg-gray-600 rounded-md hover:bg-gray-700 transition-colors"
+            >
+                Уже есть аккаунт? Войти
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('togglePassword').addEventListener('click', function () {
+        const passwordInput = document.getElementById('password');
+        const isPasswordVisible = passwordInput.type === 'text';
+        passwordInput.type = isPasswordVisible ? 'password' : 'text';
+    });
+</script>
+</body>
+</html>
