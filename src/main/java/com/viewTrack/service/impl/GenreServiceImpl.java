@@ -9,6 +9,8 @@ import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class GenreServiceImpl implements GenreService {
@@ -30,5 +32,10 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public void deleteGenre(long id) {
         genreRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Genre> findAll() {
+        return genreRepository.findAll();
     }
 }

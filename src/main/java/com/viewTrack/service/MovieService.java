@@ -9,4 +9,6 @@ public interface MovieService {
     Movie createMovie(MovieRequestDto movieRequestDto);
 
     List<Movie> getAllMovies();
+
+    List<Movie> getMovies(String sort, String genre, String year);
 }
