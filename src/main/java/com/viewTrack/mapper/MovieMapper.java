@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
@@ -21,14 +22,14 @@ public interface MovieMapper {
     MovieResponseDto toMovieResponseDto(Movie movie);
 
     @Named("mapGenres")
-    default List<String> mapGenres(List<Genre> genres) {
+    default List<String> mapGenres(Set<Genre> genres) {
         return genres.stream()
                 .map(Genre::getGenreName)
                 .collect(Collectors.toList());
     }
 
     @Named("mapDirectors")
-    default List<String> mapDirectors(List<Director> directors) {
+    default List<String> mapDirectors(Set<Director> directors) {
         return directors.stream()
                 .map(Director::getFullName)
                 .collect(Collectors.toList());

@@ -102,20 +102,23 @@
     </script>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <div th:each="movie : ${movies}"
-             class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
+        <a th:each="movie : ${movies}"
+           th:href="@{/api/movie/{id}(id=${movie.id})}"
+           class="block bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
             <img
                     th:src="${movie.poster?.filename != null ? '/api/image/get/' + movie.poster.filename : 'https://via.placeholder.com/300x450'}"
                     th:alt="${movie.title}"
                     class="w-full h-64 object-cover" />
             <div class="p-4">
-                <h3 class="text-lg font-semibold text-gray-800" th:text="${movie.title}">Название фильма</h3>
+                <h3 class="text-lg font-semibold text-gray-800" th:text="${movie.title}">
+                    Название фильма
+                </h3>
                 <p class="text-sm text-gray-500"
                    th:text="|${movie.releaseDate?.year} • ${#strings.listJoin(movie.genres.![genreName], ', ')}|">
                     2023 • Жанр
                 </p>
             </div>
-        </div>
+        </a>
 
         <div th:if="${#lists.isEmpty(movies)}" class="col-span-full text-center py-8 text-gray-500">
             Нет доступных фильмов.

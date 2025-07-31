@@ -6,7 +6,9 @@ import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.viewTrack.data.entity.AbstractEntity.DEFAULT_GENERATOR;
 
@@ -25,13 +27,13 @@ public class Movie extends AbstractEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "movie_genres",
             joinColumns = @JoinColumn(name = "movie_id"),
             inverseJoinColumns = @JoinColumn(name = "genre_id")
     )
-    private List<Genre> genres = new ArrayList<>();
+    private Set<Genre> genres = new HashSet<>();
 
     @Column(name = "release_date")
     private LocalDate releaseDate;
@@ -46,15 +48,15 @@ public class Movie extends AbstractEntity {
     @Column(name = "duration_min")
     private int durationMin;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "movie_directors",
             joinColumns = @JoinColumn(name = "movie_id"),
             inverseJoinColumns = @JoinColumn(name = "director_id")
     )
-    private List<Director> directors = new ArrayList<>();
+    private Set<Director> directors = new HashSet<>();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "movie_reviews",
             joinColumns = @JoinColumn(name = "movie_id"),

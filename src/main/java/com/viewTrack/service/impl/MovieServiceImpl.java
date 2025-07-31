@@ -6,6 +6,7 @@ import com.viewTrack.data.repository.GenreRepository;
 import com.viewTrack.data.repository.ImageRepository;
 import com.viewTrack.data.repository.MovieRepository;
 import com.viewTrack.dto.request.MovieRequestDto;
+import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,20 +32,20 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public Movie createMovie(MovieRequestDto movieDto) {
-        List<Genre> genres = movieDto.getGenres().stream()
+        Set<Genre> genres = movieDto.getGenres().stream()
                 .map(genreRepository::findByGenreName)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .toList();
+                .collect(Collectors.toSet());
 
         Image poster = movieDto.getPoster() != null ?
                 imageRepository.findById(movieDto.getPoster()).orElse(null) : null;
 
-        List<Director> directors = movieDto.getDirectors().stream()
+        Set<Director> directors = movieDto.getDirectors().stream()
                 .map(directorRepository::findByFullName)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .toList();
+                .collect(Collectors.toSet());
 
         List<Review> reviews = new ArrayList<>();
 
@@ -105,5 +107,11 @@ public class MovieServiceImpl implements MovieService {
         }
 
         return movies;
+    }
+
+    @Override
+    public Movie getMovieById(Long id) {
+        return movieRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Фильм не найден"));
     }
 }

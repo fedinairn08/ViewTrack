@@ -50,4 +50,14 @@ public class MovieController {
         model.addAttribute("title", "Фильмы");
         return "allFilms";
     }
+
+    @GetMapping("/{id}")
+    public String getMovieDetails(@PathVariable Long id, Model model) {
+        Movie movie = movieService.getMovieById(id);
+
+        model.addAttribute("movie", movie);
+        model.addAttribute("title", movie.getTitle());
+
+        return "movie-detail";
+    }
 }
