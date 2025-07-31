@@ -5,6 +5,8 @@ import com.viewTrack.dto.request.JwtRefreshRequest;
 import com.viewTrack.dto.response.AuthResponse;
 import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.service.AuthService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -26,9 +28,16 @@ public class AuthController {
     @PostMapping("/signIn")
     public String signIn(@RequestParam String username,
                          @RequestParam String password,
-                         Model model) {
+                         Model model,
+                         HttpServletResponse response) {
         try {
-            authService.signIn(username, password);
+            AuthResponse authResponse = authService.signIn(username, password);
+
+            Cookie cookie = new Cookie("x_api_token", authResponse.accessToken());
+            cookie.setHttpOnly(true);
+            cookie.setPath("/");
+            cookie.setMaxAge(24 * 60 * 60);
+            response.addCookie(cookie);
             return "redirect:/api/movie/all";
         } catch (ResourceNotFoundException e) {
             model.addAttribute("error", "Неверные учетные данные");

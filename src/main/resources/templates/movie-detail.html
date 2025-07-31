@@ -131,7 +131,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const rateMovieButton = document.getElementById('rateMovieButton');
         const ratingDropdown = document.getElementById('ratingDropdown');
-        const movieId = /*[[${movie.id}]]*/ null;
 
         rateMovieButton.addEventListener('click', function() {
             ratingDropdown.classList.toggle('hidden');
@@ -145,7 +144,7 @@
     });
 
     function submitRating(element) {
-        const movieId = /*[[${movie.id}]]*/ null;
+        const movieId = [[${movie.id}]];
         const score = element.getAttribute('data-score');
 
         fetch('/api/user/rate-movie', {
@@ -168,7 +167,6 @@
 
                     document.getElementById('ratingDropdown').classList.add('hidden');
 
-                    // Обновляем отображение оценок
                     location.reload();
                 } else {
                     return response.json().then(data => {

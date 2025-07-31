@@ -25,7 +25,6 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     @Override
     public Review rateMovie(Long movieId, int rating) {
-        // пока не работает
         User currentUser = userService.getById(authUtils.getUserEntity().getId());
 
         Movie movie = movieRepository.findById(movieId)

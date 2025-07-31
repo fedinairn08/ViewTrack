@@ -17,7 +17,6 @@ public class ReviewController {
 
     @PostMapping("/api/user/rate-movie")
     public ResponseEntity<Review> rateMovie(@RequestBody RateMovieRequest request) {
-        // надо разобраться почему getMovieId null
         Review review = reviewService.rateMovie(request.getMovieId(), request.getRating());
         return ResponseEntity.ok(review);
     }

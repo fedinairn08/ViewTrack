@@ -2,7 +2,6 @@ package com.viewTrack.utils;
 
 import com.viewTrack.data.entity.User;
 import com.viewTrack.exeption.AppException;
-import com.viewTrack.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -14,8 +13,6 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class AuthUtils {
-
-    private final UserService userService;
 
     public UserDetails getUserDetailsOrThrow() {
         UserDetails principal = getUserDetails();
