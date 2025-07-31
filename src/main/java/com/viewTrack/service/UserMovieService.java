@@ -1,6 +1,7 @@
 package com.viewTrack.service;
 
 import com.viewTrack.data.entity.Movie;
+import com.viewTrack.data.entity.User;
 import com.viewTrack.data.entity.UserMovie;
 
 import java.util.List;
@@ -10,7 +11,7 @@ public interface UserMovieService {
 
     void removeFromWatchlist(Long movieId);
 
-    List<Movie> getToWatchList();
+    List<Movie> getToWatchList(User user, String sort, String genre, String year);
 
     boolean isInToWatchList(Long movieId);
 }

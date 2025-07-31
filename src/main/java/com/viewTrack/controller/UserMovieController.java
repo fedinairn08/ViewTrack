@@ -13,8 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/movie")
 @RequiredArgsConstructor
@@ -45,9 +43,9 @@ public class UserMovieController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/to-watch")
-    public ResponseEntity<List<Movie>> getToWatchList() {
-        List<Movie> movies = userMovieService.getToWatchList();
-        return ResponseEntity.ok(movies);
-    }
+//    @GetMapping("/to-watch")
+//    public ResponseEntity<List<Movie>> getToWatchList() {
+//        List<Movie> movies = userMovieService.getToWatchList();
+//        return ResponseEntity.ok(movies);
+//    }
 }

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>КиноПлатформа</title>
+    <title>Буду смотреть | КиноПлатформа</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -41,7 +41,7 @@
 
 <main class="max-w-6xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-6">
-        <span th:text="${title}">Фильмы</span>
+        Буду смотреть
     </h1>
 
     <form id="filterForm" method="get" class="flex flex-wrap gap-4 items-end mb-6 bg-white p-4 rounded-lg shadow">
@@ -50,6 +50,7 @@
             <select id="sort" name="sort" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 <option value="" th:selected="${currentSort == null}">По умолчанию</option>
                 <option value="releaseDate" th:selected="${currentSort == 'releaseDate'}">По дате выхода</option>
+                <option value="addedDate" th:selected="${currentSort == 'addedDate'}">По дате добавления</option>
             </select>
         </div>
 
@@ -102,29 +103,84 @@
     </script>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <a th:each="movie : ${movies}"
-           th:href="@{/api/movie/{id}(id=${movie.id})}"
-           class="block bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
-            <img
-                    th:src="${movie.poster?.filename != null ? '/api/image/get/' + movie.poster.filename : 'https://via.placeholder.com/300x450'}"
-                    th:alt="${movie.title}"
-                    class="w-full h-64 object-cover" />
-            <div class="p-4">
-                <h3 class="text-lg font-semibold text-gray-800" th:text="${movie.title}">
-                    Название фильма
-                </h3>
-                <p class="text-sm text-gray-500"
-                   th:text="|${movie.releaseDate?.year} • ${#strings.listJoin(movie.genres.![genreName], ', ')}|">
-                    2023 • Жанр
-                </p>
-            </div>
-        </a>
+        <div th:each="movie : ${movies}"
+             class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
+            <a th:href="@{/api/movie/{id}(id=${movie.id})}" class="block">
+                <img
+                        th:src="${movie.poster?.filename != null ? '/api/image/get/' + movie.poster.filename : 'https://via.placeholder.com/300x450'}"
+                        th:alt="${movie.title}"
+                        class="w-full h-64 object-cover" />
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800" th:text="${movie.title}">Название фильма</h3>
+                    <p class="text-sm text-gray-500"
+                       th:text="|${movie.releaseDate?.year} • ${#strings.listJoin(movie.genres.![genreName], ', ')}|">
+                        2023 • Жанр
+                    </p>
+                    <!-- Кнопка удаления из списка -->
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                        <button
+                                th:data-movie-id="${movie.id}"
+                                onclick="removeFromWatchlist(this)"
+                                class="w-full px-3 py-1 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 transition-colors">
+                            Удалить из списка
+                        </button>
+                    </div>
+                </div>
+            </a>
+        </div>
 
         <div th:if="${#lists.isEmpty(movies)}" class="col-span-full text-center py-8 text-gray-500">
-            Нет доступных фильмов.
+            У вас пока нет фильмов в списке "Буду смотреть".
         </div>
     </div>
 </main>
+
+<script>
+    function removeFromWatchlist(button) {
+        const movieId = button.getAttribute('data-movie-id');
+        const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
+
+        fetch('/api/movie/to-watch/' + movieId, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': token ? `Bearer ${token}` : ''
+            }
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Не удалось удалить фильм из списка');
+                }
+
+                const card = button.closest('div.bg-white.rounded-lg.shadow');
+                if (card) {
+                    card.remove();
+                }
+
+                const grid = document.querySelector('.grid');
+                const cards = grid.querySelectorAll('div.bg-white.rounded-lg.shadow');
+
+                if (cards.length === 0) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'col-span-full text-center py-8 text-gray-500';
+                    emptyMessage.textContent = 'У вас пока нет фильмов в списке "Буду смотреть".';
+
+                    grid.innerHTML = '';
+                    grid.appendChild(emptyMessage);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert(error.message || 'Не удалось удалить фильм из списка');
+            });
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+</script>
 
 </body>
 </html>
