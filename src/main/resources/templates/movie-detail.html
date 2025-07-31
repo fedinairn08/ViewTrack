@@ -87,8 +87,13 @@
                         </div>
                     </div>
 
-                    <button class="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition-colors w-full sm:w-auto">
-                        Добавить в "Буду смотреть"
+                    <button id="addToWatchlistBtn"
+                            onclick="addToWatchlist(this)"
+                            class="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition-colors w-full sm:w-auto"
+                            th:data-movie-id="${movie.id}"
+                            th:classappend="${inToWatchList} ? 'bg-purple-100 text-purple-800 border-transparent' : ''"
+                            th:text="${inToWatchList} ? 'В списке' : 'Добавить в &quot;Буду смотреть&quot;'">
+                    Добавить в "Буду смотреть"
                     </button>
                 </div>
 
@@ -177,6 +182,41 @@
             .catch(error => {
                 console.error('Ошибка:', error);
                 alert(error.message || 'Не удалось сохранить оценку. Пожалуйста, попробуйте позже.');
+            });
+    }
+
+    function addToWatchlist(button) {
+        const movieId = [[${movie.id}]];
+
+        if (!movieId) {
+            alert('Не удалось получить ID фильма');
+            return;
+        }
+
+        fetch('/api/movie/to-watch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ movieId: movieId })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Ошибка при добавлении в список');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                button.textContent = 'В списке "Буду смотреть"';
+                button.classList.remove('border-purple-600', 'text-purple-600', 'hover:bg-purple-50');
+                button.classList.add('bg-purple-100', 'text-purple-800', 'border-transparent');
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert(error.message || 'Не удалось добавить фильм в список');
             });
     }
 </script>

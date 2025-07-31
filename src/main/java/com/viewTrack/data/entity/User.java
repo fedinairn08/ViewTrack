@@ -54,14 +54,6 @@ public class User extends AbstractEntity implements UserDetails {
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-            name = "user_movies",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "movie_id")
-    )
-    private List<Movie> movies = new ArrayList<>();
-
-    @ManyToMany
-    @JoinTable(
             name = "user_streaming_services",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "streaming_service_id")
