@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Буду смотреть | КиноПлатформа</title>
+    <title>Просмотренное | КиноПлатформа</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -41,14 +41,14 @@
 
 <main class="max-w-6xl mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold text-gray-800 mb-6">
-        Буду смотреть
+        Просмотренное
     </h1>
 
     <form id="filterForm" method="get" class="flex flex-wrap gap-4 items-end mb-6 bg-white p-4 rounded-lg shadow">
         <div class="flex flex-col">
             <label for="sort" class="text-sm font-medium text-gray-700 mb-1">Сортировка</label>
             <select id="sort" name="sort" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option value="addedDate" th:selected="${currentSort == 'addedDate'}">По дате добавления</option>
+                <option value="watchedDate" th:selected="${currentSort == 'watchedDate'}">По дате просмотра</option>
                 <option value="releaseDate" th:selected="${currentSort == 'releaseDate'}">По дате выхода</option>
             </select>
         </div>
@@ -118,9 +118,9 @@
                     <div class="mt-3 pt-3 border-t border-gray-200">
                         <button
                                 th:data-movie-id="${movie.id}"
-                                onclick="removeFromWatchlist(event, this)"
+                                onclick="removeFromWatchedList(event, this)"
                                 class="w-full px-3 py-1 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 transition-colors">
-                            Удалить из списка
+                            Удалить из просмотренных
                         </button>
                     </div>
                 </div>
@@ -128,20 +128,20 @@
         </div>
 
         <div th:if="${#lists.isEmpty(movies)}" class="col-span-full text-center py-8 text-gray-500">
-            У вас пока нет фильмов в списке "Буду смотреть".
+            У вас пока нет фильмов в списке "Просмотренное".
         </div>
     </div>
 </main>
 
 <script>
-    function removeFromWatchlist(event, button) {
+    function removeFromWatchedList(event, button) {
         event.stopPropagation();
         event.preventDefault();
 
         const movieId = button.getAttribute('data-movie-id');
         const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
 
-        fetch('/api/movie/to-watch/' + movieId, {
+        fetch('/api/movie/watched/' + movieId, {
             method: 'DELETE',
             headers: {
                 'Authorization': token ? `Bearer ${token}` : ''
@@ -149,7 +149,7 @@
         })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Не удалось удалить фильм из списка');
+                    throw new Error('Не удалось удалить фильм из списка просмотренных');
                 }
 
                 const card = button.closest('div.bg-white.rounded-lg.shadow');
@@ -163,7 +163,7 @@
                 if (cards.length === 0) {
                     const emptyMessage = document.createElement('div');
                     emptyMessage.className = 'col-span-full text-center py-8 text-gray-500';
-                    emptyMessage.textContent = 'У вас пока нет фильмов в списке "Буду смотреть".';
+                    emptyMessage.textContent = 'У вас пока нет фильмов в списке "Просмотренное".';
 
                     grid.innerHTML = '';
                     grid.appendChild(emptyMessage);
@@ -171,7 +171,7 @@
             })
             .catch(error => {
                 console.error('Ошибка:', error);
-                alert(error.message || 'Не удалось удалить фильм из списка');
+                alert(error.message || 'Не удалось удалить фильм из списка просмотренных');
             });
     }
 

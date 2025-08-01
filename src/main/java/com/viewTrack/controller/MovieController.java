@@ -71,6 +71,28 @@ public class MovieController {
         return "to-watch";
     }
 
+    @GetMapping("/watched")
+    public String showWatchedList(@RequestParam(required = false) String sort,
+                                    @RequestParam(required = false) String genre,
+                                    @RequestParam(required = false) String year,
+                                    Model model) {
+        User currentUser = authUtils.getUserEntity();
+
+        List<Genre> allGenres = genreService.findAll();
+        model.addAttribute("allGenres", allGenres);
+
+        List<Movie> movies = userMovieService.getWatchedList(currentUser, sort, genre, year);
+
+        model.addAttribute("movies", movies);
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("currentGenre", genre);
+        model.addAttribute("currentYear", year);
+        model.addAttribute("title", "Просмотренное");
+        model.addAttribute("active", "watched");
+
+        return "watched";
+    }
+
     @GetMapping("/{id}")
     public String getMovieDetails(@PathVariable Long id, Model model) {
         Movie movie = movieService.getMovieById(id);

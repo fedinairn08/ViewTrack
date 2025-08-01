@@ -13,6 +13,8 @@ public interface UserMovieService {
 
     List<Movie> getToWatchList(User user, String sort, String genre, String year);
 
+    List<Movie> getWatchedList(User user, String sort, String genre, String year);
+
     boolean isInToWatchList(Long movieId);
 
     UserMovie markAsWatched(Long movieId);

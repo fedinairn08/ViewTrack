@@ -48,4 +48,10 @@ public class UserMovieController {
         UserMovie userMovie = userMovieService.markAsWatched(request.getMovieId());
         return ResponseEntity.ok(userMovie);
     }
+
+    @DeleteMapping("/watched/{movieId}")
+    public ResponseEntity<Void> removeFromWatchedList(@PathVariable Long movieId) {
+        userMovieService.removeFromWatchlist(movieId);
+        return ResponseEntity.ok().build();
+    }
 }
