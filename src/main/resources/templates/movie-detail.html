@@ -16,7 +16,7 @@
                class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 Фильмы
             </a>
-            <a href="/watched"
+            <a href="/api/movie/watched"
                class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                 Просмотренное
             </a>
@@ -87,14 +87,28 @@
                         </div>
                     </div>
 
-                    <button id="addToWatchlistBtn"
-                            onclick="addToWatchlist(this)"
-                            class="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition-colors w-full sm:w-auto"
-                            th:data-movie-id="${movie.id}"
-                            th:classappend="${inToWatchList} ? 'bg-purple-100 text-purple-800 border-transparent' : ''"
-                            th:text="${inToWatchList} ? 'В списке' : 'Добавить в &quot;Буду смотреть&quot;'">
-                    Добавить в "Буду смотреть"
-                    </button>
+                    <div th:if="${!inWatched}" class="relative" id="watchlistContainer">
+                        <button id="addToWatchlistBtn"
+                                onclick="addToWatchlist(this)"
+                                class="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition-colors w-full sm:w-auto"
+                                th:data-movie-id="${movie.id}"
+                                th:classappend="${inToWatchList} ? 'bg-purple-100 text-purple-800 border-transparent' : ''"
+                                th:text="${inToWatchList} ? 'В списке' : 'Добавить в &quot;Буду смотреть&quot;'">
+                            Добавить в "Буду смотреть"
+                        </button>
+                    </div>
+
+                    <!-- Кнопка "Просмотрено" -->
+                    <div class="relative" id="watchedContainer">
+                        <button id="markAsWatchedBtn"
+                                onclick="markAsWatched(this)"
+                                class="px-4 py-2 border border-green-600 text-green-600 rounded-md hover:bg-green-50 transition-colors w-full sm:w-auto"
+                                th:data-movie-id="${movie.id}"
+                                th:classappend="${inWatched} ? 'bg-green-100 text-green-800 border-transparent' : ''"
+                                th:text="${inWatched} ? 'Просмотрено' : 'Отметить как просмотренное'">
+                            Отметить как просмотренное
+                        </button>
+                    </div>
                 </div>
 
                 <h2 class="text-xl font-semibold text-gray-900 mb-2">О фильме</h2>
@@ -217,6 +231,46 @@
             .catch(error => {
                 console.error('Ошибка:', error);
                 alert(error.message || 'Не удалось добавить фильм в список');
+            });
+    }
+
+    function markAsWatched(button) {
+        const movieId = [[${movie.id}]];
+
+        if (!movieId) {
+            alert('Не удалось получить ID фильма');
+            return;
+        }
+
+        fetch('/api/movie/watched', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ movieId: movieId })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Ошибка при отметке фильма');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                button.textContent = 'Просмотрено';
+                button.classList.remove('border-green-600', 'text-green-600', 'hover:bg-green-50');
+                button.classList.add('bg-green-100', 'text-green-800', 'border-transparent');
+
+                const watchlistContainer = document.getElementById('watchlistContainer');
+                if (watchlistContainer) {
+                    watchlistContainer.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert(error.message || 'Не удалось отметить фильм как просмотренный');
             });
     }
 </script>

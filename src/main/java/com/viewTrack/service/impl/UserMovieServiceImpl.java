@@ -109,4 +109,36 @@ public class UserMovieServiceImpl implements UserMovieService {
                 .map(userMovie -> Type.TO_WATCH.equals(userMovie.getType()))
                 .orElse(false);
     }
+
+    @Override
+    public UserMovie markAsWatched(Long movieId) {
+        User currentUser = authUtils.getUserEntity();
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFoundException("Фильм не найден"));
+
+        UserMovie userMovie = userMovieRepository.findByUserAndMovie(currentUser, movie)
+                .orElseGet(() -> UserMovie.builder()
+                        .user(currentUser)
+                        .movie(movie)
+                        .build());
+
+        userMovie.setType(Type.WATCHED);
+
+        if (Type.TO_WATCH.equals(userMovie.getType())) {
+            userMovieRepository.delete(userMovie);
+        }
+
+        return userMovieRepository.save(userMovie);
+    }
+
+    @Override
+    public boolean isInWatchedList(Long movieId) {
+        User currentUser = authUtils.getUserEntity();
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFoundException("Фильм не найден"));
+
+        return userMovieRepository.findByUserAndMovie(currentUser, movie)
+                .map(userMovie -> Type.WATCHED.equals(userMovie.getType()))
+                .orElse(false);
+    }
 }

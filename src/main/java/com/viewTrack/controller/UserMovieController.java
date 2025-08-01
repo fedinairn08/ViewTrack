@@ -43,9 +43,9 @@ public class UserMovieController {
         return ResponseEntity.ok().build();
     }
 
-//    @GetMapping("/to-watch")
-//    public ResponseEntity<List<Movie>> getToWatchList() {
-//        List<Movie> movies = userMovieService.getToWatchList();
-//        return ResponseEntity.ok(movies);
-//    }
+    @PostMapping("/watched")
+    public ResponseEntity<UserMovie> markAsWatched(@RequestBody UserMovieRequest request) {
+        UserMovie userMovie = userMovieService.markAsWatched(request.getMovieId());
+        return ResponseEntity.ok(userMovie);
+    }
 }

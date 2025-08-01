@@ -59,7 +59,6 @@ public class MovieController {
         List<Genre> allGenres = genreService.findAll();
         model.addAttribute("allGenres", allGenres);
 
-        // Получаем фильмы из списка "Буду смотреть"
         List<Movie> movies = userMovieService.getToWatchList(currentUser, sort, genre, year);
 
         model.addAttribute("movies", movies);
@@ -78,7 +77,9 @@ public class MovieController {
         User currentUser = authUtils.getUserEntity();
 
         Integer userRating = null;
-        boolean inToWatchList = false;
+        boolean inToWatchList;
+        boolean inWatched;
+
         if (currentUser != null) {
             Optional<Review> userReview = movie.getReviews().stream()
                     .filter(review -> review.getUser().getId().equals(currentUser.getId()))
@@ -90,10 +91,12 @@ public class MovieController {
         }
 
         inToWatchList = userMovieService.isInToWatchList(movie.getId());
+        inWatched = userMovieService.isInWatchedList(movie.getId());
 
         model.addAttribute("movie", movie);
         model.addAttribute("userRating", userRating);
         model.addAttribute("inToWatchList", inToWatchList);
+        model.addAttribute("inWatched", inWatched);
         model.addAttribute("title", movie.getTitle());
 
         return "movie-detail";

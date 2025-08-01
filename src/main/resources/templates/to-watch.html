@@ -17,7 +17,7 @@
                th:classappend="${active == 'films'} ? 'border-purple-500 text-gray-900'">
                 Фильмы
             </a>
-            <a href="/watched"
+            <a href="/api/movie/watched"
                class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                th:classappend="${active == 'watched'} ? 'border-purple-500 text-gray-900'">
                 Просмотренное
@@ -116,7 +116,6 @@
                        th:text="|${movie.releaseDate?.year} • ${#strings.listJoin(movie.genres.![genreName], ', ')}|">
                         2023 • Жанр
                     </p>
-                    <!-- Кнопка удаления из списка -->
                     <div class="mt-3 pt-3 border-t border-gray-200">
                         <button
                                 th:data-movie-id="${movie.id}"
