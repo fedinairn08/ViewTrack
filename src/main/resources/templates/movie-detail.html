@@ -73,13 +73,22 @@
                 </div>
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
                     <div class="relative" id="rateMovieContainer">
-                        <button id="rateMovieButton"
+                        <button th:if="${userRating == null}"
+                                id="rateMovieButton"
                                 class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors w-full sm:w-auto">
                             Оценить фильм
                         </button>
+
+                        <button th:if="${userRating != null}"
+                                id="ratedMovieButton"
+                                class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors w-full sm:w-auto">
+                            Оценено: <span th:text="${userRating}"></span>/10 ★ <span class="text-sm opacity-75">(Изменить)</span>
+                        </button>
+
                         <div id="ratingDropdown" class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg hidden">
                             <div class="py-1">
-                                <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" th:each="score : ${#numbers.sequence(0, 10)}"
+                                <div class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                     th:each="score : ${#numbers.sequence(0, 10)}"
                                      th:text="${score} + ' ★'"
                                      th:data-score="${score}"
                                      onclick="submitRating(this)">
@@ -99,7 +108,6 @@
                         </button>
                     </div>
 
-                    <!-- Кнопка "Просмотрено" -->
                     <div class="relative" id="watchedContainer">
                         <button id="markAsWatchedBtn"
                                 onclick="markAsWatched(this)"
@@ -150,14 +158,27 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const rateMovieButton = document.getElementById('rateMovieButton');
+        const ratedMovieButton = document.getElementById('ratedMovieButton');
         const ratingDropdown = document.getElementById('ratingDropdown');
 
-        rateMovieButton.addEventListener('click', function() {
-            ratingDropdown.classList.toggle('hidden');
-        });
+        if (rateMovieButton) {
+            rateMovieButton.addEventListener('click', function() {
+                ratingDropdown.classList.toggle('hidden');
+            });
+        }
+
+        if (ratedMovieButton) {
+            ratedMovieButton.addEventListener('click', function() {
+                ratingDropdown.classList.toggle('hidden');
+            });
+        }
 
         document.addEventListener('click', function(event) {
-            if (!rateMovieButton.contains(event.target) && !ratingDropdown.contains(event.target)) {
+            const isRateButton = rateMovieButton && rateMovieButton.contains(event.target);
+            const isRatedButton = ratedMovieButton && ratedMovieButton.contains(event.target);
+            const isDropdown = ratingDropdown.contains(event.target);
+
+            if (!isRateButton && !isRatedButton && !isDropdown) {
                 ratingDropdown.classList.add('hidden');
             }
         });
@@ -180,14 +201,22 @@
         })
             .then(response => {
                 if (response.ok) {
+                    // Обновляем кнопку без перезагрузки страницы
                     const rateMovieButton = document.getElementById('rateMovieButton');
-                    rateMovieButton.textContent = `Оценено: ${score} ★`;
-                    rateMovieButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-                    rateMovieButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                    const ratedMovieButton = document.getElementById('ratedMovieButton');
+
+                    if (rateMovieButton) {
+                        rateMovieButton.textContent = `Оценено: ${score} ★`;
+                        rateMovieButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+                        rateMovieButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                        rateMovieButton.id = 'ratedMovieButton';
+                    }
+
+                    if (ratedMovieButton) {
+                        ratedMovieButton.textContent = `Оценено: ${score} ★`;
+                    }
 
                     document.getElementById('ratingDropdown').classList.add('hidden');
-
-                    location.reload();
                 } else {
                     return response.json().then(data => {
                         throw new Error(data.message || 'Ошибка при сохранении оценки');

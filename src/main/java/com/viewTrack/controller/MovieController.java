@@ -4,6 +4,7 @@ import com.viewTrack.data.entity.Genre;
 import com.viewTrack.data.entity.Movie;
 import com.viewTrack.data.entity.Review;
 import com.viewTrack.data.entity.User;
+import com.viewTrack.data.repository.ReviewRepository;
 import com.viewTrack.service.GenreService;
 import com.viewTrack.service.MovieService;
 import com.viewTrack.service.UserMovieService;
@@ -31,6 +32,8 @@ public class MovieController {
     private final AuthUtils authUtils;
 
     private final UserMovieService userMovieService;
+
+    private final ReviewRepository reviewRepository;
 
     @GetMapping("/all")
     public String showAllMoviesForm(@RequestParam(required = false) String sort,
@@ -108,9 +111,7 @@ public class MovieController {
         boolean inWatched;
 
         if (currentUser != null) {
-            Optional<Review> userReview = movie.getReviews().stream()
-                    .filter(review -> review.getUser().getId().equals(currentUser.getId()))
-                    .findFirst();
+            Optional<Review> userReview = reviewRepository.findByUserAndMovie(currentUser, movie);
 
             if (userReview.isPresent()) {
                 userRating = userReview.get().getRating();
