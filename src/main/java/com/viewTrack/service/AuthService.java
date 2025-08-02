@@ -8,4 +8,6 @@ public interface AuthService {
     AuthResponse signIn(String username, String password);
 
     AuthResponse signUp(String username, String password, String name, String surname);
+
+    void changePassword(Long userId, String currentPassword, String newPassword);
 }

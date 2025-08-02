@@ -2,10 +2,13 @@ package com.viewTrack.service.impl;
 
 import com.amazonaws.services.kms.model.NotFoundException;
 import com.viewTrack.data.entity.Image;
+import com.viewTrack.data.entity.User;
 import com.viewTrack.data.repository.ImageRepository;
+import com.viewTrack.data.repository.UserRepository;
 import com.viewTrack.s3storage.S3File;
 import com.viewTrack.service.FileService;
 import com.viewTrack.service.ImageService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,8 @@ public class ImageServiceImpl implements ImageService {
     private final ImageRepository imageRepository;
 
     private final FileService fileService;
+
+    private final UserRepository userRepository;
 
     @Override
     @SneakyThrows
@@ -39,5 +44,38 @@ public class ImageServiceImpl implements ImageService {
         Image photo = imageRepository.findByUploadId(uuid).orElseThrow(() ->
                 new NotFoundException(String.format("Photo with uuid: %s -- is not found", uuid)));
         return fileService.get(photo.getFilename());
+    }
+
+    @Override
+    public String uploadProfileImage(Long userId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Файл не может быть пустым");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Поддерживаются только изображения");
+        }
+
+        S3File s3File = upload(file);
+
+        Image image = Image.builder()
+                .filename(s3File.getFilename())
+                .uploadId(s3File.getUploadId())
+                .build();
+
+        Image savedImage = imageRepository.save(image);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
+
+        if (user.getProfileImage() != null) {
+            delete(String.valueOf(user.getProfileImage().getUploadId()));
+        }
+
+        user.setProfileImage(savedImage);
+        userRepository.save(user);
+
+        return s3File.getFilename();
     }
 }

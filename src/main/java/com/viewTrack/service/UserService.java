@@ -1,7 +1,6 @@
 package com.viewTrack.service;
 
 import com.viewTrack.data.entity.User;
-import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
     User getById(long id);
@@ -15,6 +14,4 @@ public interface UserService {
     Long getRatingsCount(Long userId);
 
     User updateProfile(Long userId, String name, String surname, String email);
-
-    String uploadProfileImage(Long userId, MultipartFile file);
 }

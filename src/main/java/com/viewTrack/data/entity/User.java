@@ -29,9 +29,6 @@ public class User extends AbstractEntity implements UserDetails {
     @Column(name = "surname", nullable = false)
     private String surname;
 
-    @Column(name = "email")
-    private String email;
-
     @Column(name = "login", nullable = false)
     @NonNull
     private String login;

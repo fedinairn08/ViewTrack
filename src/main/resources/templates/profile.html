@@ -24,7 +24,7 @@
             </a>
         </nav>
 
-        <a href="/profile" class="flex-shrink-0">
+        <a href="/api/user/profile" class="flex-shrink-0">
             <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -87,19 +87,19 @@
                     </button>
                 </div>
 
-                <div id="profileView" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
-                        <p class="text-gray-900" th:text="${user.name}">Иван</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
-                        <p class="text-gray-900" th:text="${user.surname}">Иванов</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <p class="text-gray-900" th:text="${user.login}">ivan_ivanov@mail.ru</p>
-                    </div>
+                <div id="profileView">
+                    <p class="mb-2">
+                        <span class="font-medium text-gray-700">Имя:</span>
+                        <span id="userName" th:text="${user.name}">Имя</span>
+                    </p>
+                    <p class="mb-2">
+                        <span class="font-medium text-gray-700">Фамилия:</span>
+                        <span id="userSurname" th:text="${user.surname}">Фамилия</span>
+                    </p>
+                    <p>
+                        <span class="font-medium text-gray-700">Email:</span>
+                        <span id="userEmail" th:text="${user.login ?: 'Не указан'}">email@example.com</span>
+                    </p>
                 </div>
 
                 <form id="profileEditForm" class="space-y-4 hidden">
@@ -177,7 +177,6 @@
                                 name="newPassword"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                                 required
-                                minlength="8"
                         />
                     </div>
                     <div>
@@ -188,7 +187,6 @@
                                 name="confirmPassword"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
                                 required
-                                minlength="8"
                         />
                     </div>
                     <div class="flex justify-end space-x-3 mt-4">
@@ -294,7 +292,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': token ? `Bearer ${token}` : ''
+                        'Authorization': token ? `Bearer ${token}` : '',
+                        'Accept': 'application/json'
                     },
                     body: JSON.stringify(formData)
                 })
@@ -307,9 +306,9 @@
                         return response.json();
                     })
                     .then(updatedUser => {
-                        document.querySelector('#profileView p:nth-child(2)').textContent = updatedUser.name;
-                        document.querySelector('#profileView p:nth-child(4)').textContent = updatedUser.surname;
-                        document.querySelector('#profileView p:nth-child(6)').textContent = updatedUser.email || 'Не указан';
+                        document.getElementById('userName').textContent = updatedUser.name;
+                        document.getElementById('userSurname').textContent = updatedUser.surname;
+                        document.getElementById('userEmail').textContent = updatedUser.login;
 
                         document.getElementById('profileView').classList.remove('hidden');
                         profileEditForm.classList.add('hidden');
@@ -320,7 +319,6 @@
                             profileImage.src = `/api/image/get/${updatedUser.profileImage.filename}?t=${timestamp}`;
                         }
 
-                        alert('Данные профиля успешно обновлены!');
                     })
                     .catch(error => {
                         console.error('Ошибка при обновлении профиля:', error);
@@ -336,55 +334,14 @@
             return null;
         }
 
-        // // Обработка отправки формы профиля
-        // profileEditForm.addEventListener('submit', function(e) {
-        //     e.preventDefault();
-        //
-        //     const formData = {
-        //         id: document.querySelector('#profileEditForm input[name="id"]').value,
-        //         name: document.querySelector('#profileEditForm input[name="name"]').value,
-        //         surname: document.querySelector('#profileEditForm input[name="surname"]').value,
-        //         email: document.querySelector('#profileEditForm input[name="email"]').value
-        //     };
-        //
-        //     fetch('/api/user/update-profile', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //             'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
-        //         },
-        //         body: JSON.stringify(formData)
-        //     })
-        //         .then(response => {
-        //             if (response.ok) {
-        //                 // Обновляем отображение
-        //                 document.querySelector('#profileView p:nth-child(2)').textContent = formData.name;
-        //                 document.querySelector('#profileView p:nth-child(4)').textContent = formData.surname;
-        //                 document.querySelector('#profileView p:nth-child(6)').textContent = formData.email || 'Не указан';
-        //
-        //                 // Скрываем форму редактирования
-        //                 profileView.classList.remove('hidden');
-        //                 profileEditForm.classList.add('hidden');
-        //
-        //                 alert('Данные успешно обновлены!');
-        //             } else {
-        //                 return response.json().then(data => {
-        //                     throw new Error(data.message || 'Ошибка при обновлении профиля');
-        //                 });
-        //             }
-        //         })
-        //         .catch(error => {
-        //             console.error('Ошибка:', error);
-        //             alert(error.message);
-        //         });
-        // });
-
         document.getElementById('passwordForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             const currentPassword = document.getElementById('currentPassword').value;
             const newPassword = document.getElementById('newPassword').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
+
+            const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
 
             if (newPassword !== confirmPassword) {
                 alert('Новые пароли не совпадают');
@@ -400,7 +357,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                    'Authorization': token ? `Bearer ${token}` : ''
                 },
                 body: JSON.stringify(formData)
             })
@@ -412,8 +369,6 @@
                         document.getElementById('currentPassword').value = '';
                         document.getElementById('newPassword').value = '';
                         document.getElementById('confirmPassword').value = '';
-
-                        alert('Пароль успешно изменен!');
                     } else {
                         return response.json().then(data => {
                             throw new Error(data.message || 'Ошибка при изменении пароля');
@@ -432,6 +387,8 @@
             const formData = new FormData();
             const fileInput = document.querySelector('input[type="file"]');
 
+            const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
+
             if (fileInput.files.length === 0) {
                 alert('Пожалуйста, выберите файл');
                 return;
@@ -442,7 +399,7 @@
             fetch('/api/user/upload-profile-image', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer ' + localStorage.getItem('accessToken')
+                    'Authorization': token ? `Bearer ${token}` : ''
                 },
                 body: formData
             })
@@ -461,8 +418,6 @@
                     img.src = '/api/image/get/' + data.filename + '?t=' + timestamp;
 
                     photoFormContainer.classList.add('hidden');
-
-                    alert('Фото профиля успешно обновлено!');
                 })
                 .catch(error => {
                     console.error('Ошибка:', error);

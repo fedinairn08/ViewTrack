@@ -11,4 +11,6 @@ public interface ImageService {
     void delete(String filename);
 
     S3File getMediaFileByUuid(UUID uuid);
+
+    String uploadProfileImage(Long userId, MultipartFile file);
 }

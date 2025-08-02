@@ -11,6 +11,7 @@ import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.security.jwt.JwtTokenProvider;
 import com.viewTrack.service.AuthService;
 import com.viewTrack.service.UserService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -87,5 +88,23 @@ public class AuthServiceImpl implements AuthService {
                 user.getAuthorities()
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @Override
+    public void changePassword(Long userId, String currentPassword, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Текущий пароль неверен");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Новый пароль должен отличаться от текущего");
+        }
+
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(encodedPassword);
+        userRepository.save(user);
     }
 }
