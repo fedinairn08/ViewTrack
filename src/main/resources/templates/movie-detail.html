@@ -206,14 +206,14 @@
                     const ratedMovieButton = document.getElementById('ratedMovieButton');
 
                     if (rateMovieButton) {
-                        rateMovieButton.textContent = `Оценено: ${score} ★`;
+                        rateMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
                         rateMovieButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
                         rateMovieButton.classList.add('bg-green-600', 'hover:bg-green-700');
                         rateMovieButton.id = 'ratedMovieButton';
                     }
 
                     if (ratedMovieButton) {
-                        ratedMovieButton.textContent = `Оценено: ${score} ★`;
+                        ratedMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
                     }
 
                     document.getElementById('ratingDropdown').classList.add('hidden');
