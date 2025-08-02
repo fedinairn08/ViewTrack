@@ -42,20 +42,15 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-center mb-6">
                     <div class="relative inline-block">
-                        <img
-                                th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/150'}"
-                                alt="Фото профиля"
-                                class="w-24 h-24 rounded-full object-cover mx-auto" />
-                        <button
-                                id="changePhotoBtn"
-                                class="absolute bottom-0 right-0 bg-purple-600 rounded-full p-1 text-white hover:bg-purple-700 transition-colors">
+                        <img id="sidebarProfileImage" th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/150'}" alt="Фото профиля" class="w-24 h-24 rounded-full object-cover mx-auto" />
+                        <button id="changePhotoBtn" class="absolute bottom-0 right-0 bg-purple-600 rounded-full p-1 text-white hover:bg-purple-700 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                         </button>
                     </div>
-                    <h2 class="mt-4 text-xl font-semibold" th:text="${user.name + ' ' + user.surname}">Имя Фамилия</h2>
-                    <p class="text-gray-600" th:text="${user.login}">username</p>
+                    <h2 id="sidebarFullName" class="mt-4 text-xl font-semibold" th:text="${user.name + ' ' + user.surname}">Имя Фамилия</h2>
+                    <p id="sidebarLogin" class="text-gray-600" th:text="${user.login}">username</p>
                 </div>
 
                 <div class="border-t pt-4">
@@ -309,6 +304,9 @@
                         document.getElementById('userName').textContent = updatedUser.name;
                         document.getElementById('userSurname').textContent = updatedUser.surname;
                         document.getElementById('userEmail').textContent = updatedUser.login;
+
+                        document.getElementById('sidebarFullName').textContent = updatedUser.name + ' ' + updatedUser.surname;
+                        document.getElementById('sidebarLogin').textContent = updatedUser.login;
 
                         document.getElementById('profileView').classList.remove('hidden');
                         profileEditForm.classList.add('hidden');
