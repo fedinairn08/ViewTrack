@@ -70,7 +70,13 @@ public class ImageServiceImpl implements ImageService {
                 .orElseThrow(() -> new EntityNotFoundException("Пользователь не найден"));
 
         if (user.getProfileImage() != null) {
-            delete(String.valueOf(user.getProfileImage().getUploadId()));
+            Image oldImage = user.getProfileImage();
+
+            delete(oldImage.getFilename());
+
+            user.setProfileImage(null);
+
+            imageRepository.delete(oldImage);
         }
 
         user.setProfileImage(savedImage);

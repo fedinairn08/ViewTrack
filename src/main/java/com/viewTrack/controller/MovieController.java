@@ -38,10 +38,13 @@ public class MovieController {
                                     @RequestParam(required = false) String year,
                                     Model model) {
         List<Genre> allGenres = genreService.findAll();
+        User currentUser = authUtils.getUserEntity();
+
         model.addAttribute("allGenres", allGenres);
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentGenre", genre);
         model.addAttribute("currentYear", year);
+        model.addAttribute("user", currentUser);
 
         List<Movie> movies = movieService.getMovies(sort, genre, year);
         model.addAttribute("movies", movies);
@@ -65,6 +68,7 @@ public class MovieController {
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentGenre", genre);
         model.addAttribute("currentYear", year);
+        model.addAttribute("user", currentUser);
         model.addAttribute("title", "Буду смотреть");
         model.addAttribute("active", "to-watch");
 
@@ -87,6 +91,7 @@ public class MovieController {
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentGenre", genre);
         model.addAttribute("currentYear", year);
+        model.addAttribute("user", currentUser);
         model.addAttribute("title", "Просмотренное");
         model.addAttribute("active", "watched");
 
@@ -118,6 +123,7 @@ public class MovieController {
         model.addAttribute("movie", movie);
         model.addAttribute("userRating", userRating);
         model.addAttribute("inToWatchList", inToWatchList);
+        model.addAttribute("user", currentUser);
         model.addAttribute("inWatched", inWatched);
         model.addAttribute("title", movie.getTitle());
 
