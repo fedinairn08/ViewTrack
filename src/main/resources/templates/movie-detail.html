@@ -173,20 +173,17 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div th:each="review : ${movie.reviews}" class="bg-white p-4 rounded-lg shadow">
+                        <div th:if="${movieReviews != null and movieReviews.size() > 0}" th:each="review : ${movieReviews}" class="bg-white p-4 rounded-lg shadow">
                             <div class="flex justify-between items-start mb-1">
-                                <span class="font-medium text-gray-900"
-                                      th:text="${review.user ? review.user.name + ' ' + review.user.surname : 'Аноним'}">
-                                </span>
-                                <span class="text-yellow-500 font-bold">
-                                    <span th:each="i : ${#numbers.sequence(1, review.rating)}">★</span>
-                                    <span th:each="i : ${#numbers.sequence(review.rating + 1, 5)}">☆</span>
-                                </span>
+            <span class="font-medium text-gray-900"
+                  th:text="${review.user != null ? review.user.name + ' ' + review.user.surname : 'Аноним'}"></span>
+                                <span class="text-yellow-500 font-bold" th:text="${review.rating} + '/10'"></span>
                             </div>
-                            <p th:text="${review.content}" class="text-gray-700 text-sm"></p>
+                            <p th:if="${review.content != null and review.content != ''}" th:text="${review.content}" class="text-gray-700 text-sm"></p>
+                            <p th:if="${review.content == null or review.content == ''}" class="text-gray-500 italic text-sm">Пользователь не оставил комментарий</p>
                         </div>
 
-                        <div th:if="${#lists.isEmpty(movie.reviews)}" class="text-gray-500 italic">
+                        <div th:if="${movieReviews == null or movieReviews.size() == 0}" class="text-gray-500 italic">
                             Отзывов пока нет.
                         </div>
                     </div>
@@ -246,7 +243,7 @@
             const content = document.getElementById('reviewContent').value;
             const movieId = [[${movie.id}]];
 
-            fetch('/api/user/save-review', {
+            fetch('/api/user/update-review', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -300,6 +297,8 @@
                         rateMovieButton.id = 'ratedMovieButton';
                     }
 
+                    updateReviewsSection(score, null);
+
                     if (ratedMovieButton) {
                         ratedMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
                     }
@@ -317,6 +316,59 @@
                 console.error('Ошибка:', error);
                 alert(error.message || 'Не удалось сохранить оценку. Пожалуйста, попробуйте позже.');
             });
+    }
+
+    function updateReviewsSection(rating, reviewContent) {
+        const reviewsContainer = document.querySelector('.space-y-4');
+        if (!reviewsContainer) return;
+
+        // Проверяем, есть ли уже ваш отзыв
+        let userReviewElement = document.querySelector('.user-review');
+        if (userReviewElement) {
+            // Обновляем существующий отзыв
+            const starsContainer = userReviewElement.querySelector('.text-yellow-500.font-bold');
+            if (starsContainer) {
+                // Создаем HTML для звезд
+                let starsHTML = '';
+                for (let i = 1; i <= 10; i++) {
+                    starsHTML += i <= rating ? '<span class="text-sm">★</span>' : '<span class="text-sm opacity-50">☆</span>';
+                }
+                starsContainer.innerHTML = starsHTML + ` <span class="text-sm">${rating}/10</span>`;
+            }
+
+            const commentElement = userReviewElement.querySelector('p.text-gray-700');
+            if (commentElement && reviewContent) {
+                commentElement.textContent = reviewContent;
+            }
+        } else {
+            // Создаем новый элемент отзыва
+            const newReview = document.createElement('div');
+            newReview.className = 'bg-white p-4 rounded-lg shadow user-review';
+
+            // Создаем HTML для звезд
+            let starsHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                starsHTML += i <= rating ? '<span class="text-sm">★</span>' : '<span class="text-sm opacity-50">☆</span>';
+            }
+
+            newReview.innerHTML = `
+            <div class="flex justify-between items-start mb-1">
+                <span class="font-medium text-gray-900">Вы</span>
+                <span class="text-yellow-500 font-bold">
+                    ${starsHTML} <span class="text-sm">${rating}/10</span>
+                </span>
+            </div>
+            ${reviewContent ? `<p class="text-gray-700 text-sm">${reviewContent}</p>` : '<p class="text-gray-500 italic text-sm">Пользователь не оставил комментарий</p>'}
+        `;
+
+            // Вставляем ваш отзыв в начало списка
+            const firstReview = reviewsContainer.querySelector('.bg-white.p-4.rounded-lg.shadow');
+            if (firstReview) {
+                reviewsContainer.insertBefore(newReview, firstReview);
+            } else {
+                reviewsContainer.appendChild(newReview);
+            }
+        }
     }
 
     function addToWatchlist(button) {

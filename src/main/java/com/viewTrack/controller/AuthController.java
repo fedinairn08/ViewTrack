@@ -69,4 +69,13 @@ public class AuthController {
     public ResponseEntity<BasicApiResponse<AuthResponse>> refresh(@RequestBody JwtRefreshRequest refreshRequest) {
         return ResponseEntity.ok(new BasicApiResponse<>(authService.refresh(refreshRequest.refreshToken())));
     }
+
+    @GetMapping("/logout")
+    public String logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("x_api_token", null);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+        return "redirect:/api/auth/signIn";
+    }
 }
