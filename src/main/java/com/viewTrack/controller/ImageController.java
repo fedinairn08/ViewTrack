@@ -60,6 +60,6 @@ public class ImageController {
         } else if (filename.toLowerCase().endsWith(".gif")) {
             return "image/gif";
         }
-        return "image/jpeg"; // по умолчанию
+        return "image/jpeg";
     }
 }

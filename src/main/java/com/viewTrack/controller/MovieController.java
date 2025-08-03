@@ -111,6 +111,8 @@ public class MovieController {
         boolean inToWatchList;
         boolean inWatched;
 
+        List<Review> movieReviews = reviewRepository.findByMovieId(id);
+
         if (currentUser != null) {
             Optional<Review> userReview = reviewRepository.findByUserAndMovie(currentUser, movie);
 
@@ -130,6 +132,7 @@ public class MovieController {
         model.addAttribute("user", currentUser);
         model.addAttribute("inWatched", inWatched);
         model.addAttribute("title", movie.getTitle());
+        model.addAttribute("movieReviews", movieReviews);
 
         return "movie-detail";
     }
