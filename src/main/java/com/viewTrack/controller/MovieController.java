@@ -107,6 +107,7 @@ public class MovieController {
         User currentUser = authUtils.getUserEntity();
 
         Integer userRating = null;
+        String userReviewContent = null;
         boolean inToWatchList;
         boolean inWatched;
 
@@ -115,6 +116,7 @@ public class MovieController {
 
             if (userReview.isPresent()) {
                 userRating = userReview.get().getRating();
+                userReviewContent = userReview.get().getContent();
             }
         }
 
@@ -123,6 +125,7 @@ public class MovieController {
 
         model.addAttribute("movie", movie);
         model.addAttribute("userRating", userRating);
+        model.addAttribute("userReviewContent", userReviewContent);
         model.addAttribute("inToWatchList", inToWatchList);
         model.addAttribute("user", currentUser);
         model.addAttribute("inWatched", inWatched);

@@ -97,6 +97,32 @@
                         </div>
                     </div>
 
+                    <div th:if="${userRating != null}" class="mt-4">
+                        <button id="toggleReviewBtn"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            <span th:if="${userReview == null}">Оставить отзыв</span>
+                            <span th:if="${userReview != null}">Изменить отзыв</span>
+                        </button>
+
+                        <div id="reviewFormContainer" class="mt-4 hidden">
+        <textarea id="reviewContent"
+                  class="w-full p-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  rows="4"
+                  placeholder="Напишите ваш отзыв..."
+                  th:text="${userReview?.comment}"></textarea>
+                            <div class="mt-2">
+                                <button id="submitReviewBtn"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                                    Сохранить
+                                </button>
+                                <button id="cancelReviewBtn"
+                                        class="ml-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                                    Отмена
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div th:if="${!inWatched}" class="relative" id="watchlistContainer">
                         <button id="addToWatchlistBtn"
                                 onclick="addToWatchlist(this)"
@@ -184,6 +210,57 @@
         });
     });
 
+    // Показать/скрыть форму отзыва
+    const toggleReviewBtn = document.getElementById('toggleReviewBtn');
+    if (toggleReviewBtn) {
+        toggleReviewBtn.addEventListener('click', function() {
+            const container = document.getElementById('reviewFormContainer');
+            container.classList.toggle('hidden');
+        });
+    }
+
+    // Отмена редактирования
+    const cancelReviewBtn = document.getElementById('cancelReviewBtn');
+    if (cancelReviewBtn) {
+        cancelReviewBtn.addEventListener('click', function() {
+            document.getElementById('reviewFormContainer').classList.add('hidden');
+        });
+    }
+
+    // Отправка отзыва
+    const submitReviewBtn = document.getElementById('submitReviewBtn');
+    if (submitReviewBtn) {
+        submitReviewBtn.addEventListener('click', function() {
+            const content = document.getElementById('reviewContent').value;
+            const movieId = [[${movie.id}]];
+
+            fetch('/api/user/update-review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    movieId: movieId,
+                    content: content
+                })
+            })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Ошибка при сохранении отзыва');
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert(error.message || 'Не удалось сохранить отзыв');
+                });
+        });
+    }
+
     function submitRating(element) {
         const movieId = [[${movie.id}]];
         const score = element.getAttribute('data-score');
@@ -201,7 +278,6 @@
         })
             .then(response => {
                 if (response.ok) {
-                    // Обновляем кнопку без перезагрузки страницы
                     const rateMovieButton = document.getElementById('rateMovieButton');
                     const ratedMovieButton = document.getElementById('ratedMovieButton');
 
