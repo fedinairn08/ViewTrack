@@ -3,15 +3,13 @@ package com.viewTrack.controller;
 import com.viewTrack.data.entity.Review;
 import com.viewTrack.data.entity.User;
 import com.viewTrack.dto.RateMovieRequest;
+import com.viewTrack.dto.request.SaveReviewRequest;
 import com.viewTrack.dto.request.UpdateReviewRequest;
 import com.viewTrack.service.ReviewService;
 import com.viewTrack.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
@@ -29,13 +27,31 @@ public class ReviewController {
     }
 
     @PostMapping("/update-review")
-    public ResponseEntity<Review> updateReview(@RequestBody UpdateReviewRequest request) {
+    public ResponseEntity<Review> updateReview(@RequestBody SaveReviewRequest request) {
         User currentUser = authUtils.getUserEntity();
-        Review updatedReview = reviewService.updateReview(
+        Review updatedReview = reviewService.saveReview(
                 currentUser.getId(),
                 request.getMovieId(),
                 request.getContent()
         );
         return ResponseEntity.ok(updatedReview);
+    }
+
+    @PutMapping("/reviews/{reviewId}")
+    public ResponseEntity<Review> updateReview(@PathVariable Long reviewId, @RequestBody UpdateReviewRequest request) {
+        User currentUser = authUtils.getUserEntity();
+        Review updatedReview = reviewService.updateReview(
+                currentUser.getId(),
+                reviewId,
+                request.getContent()
+        );
+        return ResponseEntity.ok(updatedReview);
+    }
+
+    @DeleteMapping("/reviews/{reviewId}")
+    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
+        User currentUser = authUtils.getUserEntity();
+        reviewService.deleteReview(currentUser.getId(), reviewId);
+        return ResponseEntity.ok().build();
     }
 }
