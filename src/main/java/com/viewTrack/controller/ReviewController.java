@@ -48,10 +48,10 @@ public class ReviewController {
         return ResponseEntity.ok(updatedReview);
     }
 
-    @DeleteMapping("/reviews/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
+    @PutMapping("/reviews/delete/{reviewId}")
+    public ResponseEntity<Review> deleteReview(@PathVariable Long reviewId) {
         User currentUser = authUtils.getUserEntity();
-        reviewService.deleteReview(currentUser.getId(), reviewId);
-        return ResponseEntity.ok().build();
+        Review updatedReview = reviewService.deleteReview(currentUser.getId(), reviewId);
+        return ResponseEntity.ok(updatedReview);
     }
 }

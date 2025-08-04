@@ -82,7 +82,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public void deleteReview(Long userId, Long reviewId) {
+    public Review deleteReview(Long userId, Long reviewId) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new EntityNotFoundException("Отзыв не найден"));
 
@@ -90,6 +90,9 @@ public class ReviewServiceImpl implements ReviewService {
             throw new AccessDeniedException("Вы не можете удалить этот отзыв");
         }
 
-        reviewRepository.delete(review);
+        review.setContent(null);
+        review.setUpdatedAt(LocalDateTime.now());
+
+        return reviewRepository.save(review);
     }
 }

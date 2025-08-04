@@ -329,41 +329,39 @@
     deleteReviewButtons.forEach(button => {
         button.addEventListener('click', function() {
             const reviewId = this.getAttribute('data-review-id');
-
             const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
 
-            fetch(`/api/user/reviews/${reviewId}`, {
-                method: 'DELETE',
+            fetch(`/api/user/reviews/delete/${reviewId}`, {
+                method: 'PUT',
                 headers: {
-                    'Authorization': token ? `Bearer ${token}` : ''
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'Accept': 'application/json'
                 }
             })
-                .then(response => {
-                    if (response.ok) {
-                        return null;
-                    } else {
-                        return response.json().then(data => {
-                            throw new Error(data.message || 'Ошибка при удалении отзыва');
-                        });
+            .then(response => {
+                if (response.ok) {
+                    const reviewElement = this.closest('.bg-white.p-4.rounded-lg.shadow');
+                    if (reviewElement) {
+                        reviewElement.remove();
                     }
-                }).then(() => {
-                const reviewElement = this.closest('.bg-white.p-4.rounded-lg.shadow');
-                if (reviewElement) {
-                    reviewElement.remove();
-                }
 
-                const reviewsContainer = document.querySelector('.space-y-4');
-                if (reviewsContainer && reviewsContainer.children.length === 0) {
-                    const noReviewsMessage = document.createElement('div');
-                    noReviewsMessage.className = 'text-gray-500 italic';
-                    noReviewsMessage.textContent = 'Отзывов пока нет.';
-                    reviewsContainer.appendChild(noReviewsMessage);
+                    const reviewsContainer = document.querySelector('.space-y-4');
+                    if (reviewsContainer && reviewsContainer.children.length === 0) {
+                        const noReviewsMessage = document.createElement('div');
+                        noReviewsMessage.className = 'text-gray-500 italic';
+                        noReviewsMessage.textContent = 'Отзывов пока нет.';
+                        reviewsContainer.appendChild(noReviewsMessage);
+                    }
+                } else {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Ошибка при удалении текста отзыва');
+                    });
                 }
             })
-                .catch(error => {
-                    console.error('Ошибка:', error);
-                    alert(error.message || 'Не удалось удалить отзыв. Пожалуйста, попробуйте позже.');
-                });
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert(error.message || 'Не удалось удалить текст отзыва. Пожалуйста, попробуйте позже.');
+            });
         });
     });
 

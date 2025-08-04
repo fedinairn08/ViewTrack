@@ -9,5 +9,5 @@ public interface ReviewService {
 
     Review updateReview(Long userId, Long reviewId, String content);
 
-    void deleteReview(Long userId, Long reviewId);
+    Review deleteReview(Long userId, Long reviewId);
 }
