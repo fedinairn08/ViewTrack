@@ -146,7 +146,8 @@
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="text-lg font-semibold text-gray-900">Отзывы</h3>
 
-                        <div th:if="${userRating != null and userReviewContent == null}">
+                        <div id="leaveReviewButtonContainer"
+                             th:classappend="${userRating == null or userReviewContent != null} ? 'hidden' : ''">
                             <button id="toggleReviewBtn"
                                     class="px-3 py-1 rounded-md review-button text-sm">
                                 Оставить отзыв
@@ -344,6 +345,14 @@
                     if (reviewElement) {
                         reviewElement.remove();
                     }
+
+                    const leaveReviewContainer = document.getElementById('leaveReviewButtonContainer');
+
+                    if (leaveReviewContainer) {
+                        leaveReviewContainer.classList.remove('hidden');
+                    }
+
+                    document.getElementById('editReviewFormContainer').classList.add('hidden');
 
                     const reviewsContainer = document.querySelector('.space-y-4');
                     if (reviewsContainer && reviewsContainer.children.length === 0) {
