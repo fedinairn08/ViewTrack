@@ -173,15 +173,16 @@
                     </div>
 
                     <div class="space-y-4">
-                        <div th:if="${movieReviews != null and movieReviews.size() > 0}" th:each="review : ${movieReviews}" class="bg-white p-4 rounded-lg shadow"
+                        <div th:each="review : ${movieReviews}"
+                             th:if="${review.content != null and review.content != ''}"
+                             class="bg-white p-4 rounded-lg shadow"
                              th:attr="data-review-id=${review.id}">
                             <div class="flex justify-between items-start mb-1">
             <span class="font-medium text-gray-900"
                   th:text="${review.user != null ? review.user.name + ' ' + review.user.surname : 'Аноним'}"></span>
                                 <span class="text-yellow-500 font-bold" th:text="${review.rating} + '/10'"></span>
                             </div>
-                            <p th:if="${review.content != null and review.content != ''}" th:text="${review.content}" class="text-gray-700 text-sm"></p>
-                            <p th:if="${review.content == null or review.content == ''}" class="text-gray-500 italic text-sm">Пользователь не оставил комментарий</p>
+                            <p th:text="${review.content}" class="text-gray-700 text-sm"></p>
 
                             <div th:if="${user != null and review.user.id == user.id}" class="mt-2 flex space-x-2">
                                 <button class="edit-review-btn text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -196,7 +197,7 @@
                             </div>
                         </div>
 
-                        <div th:if="${movieReviews == null or movieReviews.size() == 0}" class="text-gray-500 italic">
+                        <div th:if="${#lists.isEmpty(movieReviews.?[content != null and content != ''])}" class="text-gray-500 italic">
                             Отзывов пока нет.
                         </div>
                     </div>
@@ -437,25 +438,9 @@
         })
             .then(response => {
                 if (response.ok) {
-                    const rateMovieButton = document.getElementById('rateMovieButton');
-                    const ratedMovieButton = document.getElementById('ratedMovieButton');
-
-                    if (rateMovieButton) {
-                        rateMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
-                        rateMovieButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-                        rateMovieButton.classList.add('bg-green-600', 'hover:bg-green-700');
-                        rateMovieButton.id = 'ratedMovieButton';
-                    }
-
-                    updateReviewsSection(score, null);
-
-                    if (ratedMovieButton) {
-                        ratedMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
-                    }
+                    updateRatingButton(score);
 
                     document.getElementById('ratingDropdown').classList.add('hidden');
-
-                    location.reload();
                 } else {
                     return response.json().then(data => {
                         throw new Error(data.message || 'Ошибка при сохранении оценки');
@@ -466,6 +451,22 @@
                 console.error('Ошибка:', error);
                 alert(error.message || 'Не удалось сохранить оценку. Пожалуйста, попробуйте позже.');
             });
+    }
+
+    function updateRatingButton(score) {
+        const rateMovieButton = document.getElementById('rateMovieButton');
+        const ratedMovieButton = document.getElementById('ratedMovieButton');
+
+        if (rateMovieButton) {
+            rateMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
+            rateMovieButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+            rateMovieButton.classList.add('bg-green-600', 'hover:bg-green-700');
+            rateMovieButton.id = 'ratedMovieButton';
+        }
+
+        if (ratedMovieButton) {
+            ratedMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
+        }
     }
 
     function updateReviewsSection(rating, reviewContent) {
