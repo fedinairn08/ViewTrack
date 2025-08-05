@@ -11,9 +11,9 @@ public interface UserMovieService {
 
     void removeFromWatchlist(Long movieId);
 
-    List<Movie> getToWatchList(User user, String sort, String genre, String year);
+    List<Movie> getToWatchList(User user, String sort, String genre, String year, Long directorId);
 
-    List<Movie> getWatchedList(User user, String sort, String genre, String year);
+    List<Movie> getWatchedList(User user, String sort, String genre, String year, Long directorId);
 
     boolean isInToWatchList(Long movieId);
 

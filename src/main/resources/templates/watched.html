@@ -68,6 +68,18 @@
         </div>
 
         <div class="flex flex-col">
+            <label for="director" class="text-sm font-medium text-gray-700 mb-1">Режиссеры</label>
+            <select id="director" name="director" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="" th:selected="${currentDirector == null}">Все режиссеры</option>
+                <option th:each="director : ${allDirectors}"
+                        th:value="${director.id}"
+                        th:text="${director.fullName}"
+                        th:selected="${currentDirector == director.id}">
+                </option>
+            </select>
+        </div>
+
+        <div class="flex flex-col">
             <label for="year" class="text-sm font-medium text-gray-700 mb-1">Годы</label>
             <select id="year" name="year" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
                 <option value="" th:selected="${currentYear == null}">Все годы</option>
@@ -92,6 +104,7 @@
             const sortSelect = document.getElementById('sort');
             const genreSelect = document.getElementById('genre');
             const yearSelect = document.getElementById('year');
+            const directorSelect = document.getElementById('director');
 
             function submitForm() {
                 form.submit();
@@ -100,6 +113,7 @@
             sortSelect.addEventListener('change', submitForm);
             genreSelect.addEventListener('change', submitForm);
             yearSelect.addEventListener('change', submitForm);
+            directorSelect.addEventListener('change', submitForm);
         });
     </script>
 

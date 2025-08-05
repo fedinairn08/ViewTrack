@@ -66,13 +66,20 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<Movie> getMovies(String sort, String genre, String year, String search) {
-        List<Movie> movies = movieRepository.findAllWithGenres();
+    public List<Movie> getMovies(String sort, String genre, String year, String search, Long directorId) {
+        List<Movie> movies = movieRepository.findAllWithGenresAndDirectors();
 
         if (genre != null && !genre.isEmpty()) {
             movies = movies.stream()
                     .filter(movie -> movie.getGenres().stream()
                             .anyMatch(g -> g.getGenreName().equals(genre)))
+                    .collect(Collectors.toList());
+        }
+
+        if (directorId != null) {
+            movies = movies.stream()
+                    .filter(movie -> movie.getDirectors().stream()
+                            .anyMatch(d -> d.getId().equals(directorId)))
                     .collect(Collectors.toList());
         }
 

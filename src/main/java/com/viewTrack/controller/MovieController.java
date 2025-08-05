@@ -1,10 +1,8 @@
 package com.viewTrack.controller;
 
-import com.viewTrack.data.entity.Genre;
-import com.viewTrack.data.entity.Movie;
-import com.viewTrack.data.entity.Review;
-import com.viewTrack.data.entity.User;
+import com.viewTrack.data.entity.*;
 import com.viewTrack.data.repository.ReviewRepository;
+import com.viewTrack.service.DirectorService;
 import com.viewTrack.service.GenreService;
 import com.viewTrack.service.MovieService;
 import com.viewTrack.service.UserMovieService;
@@ -35,22 +33,28 @@ public class MovieController {
 
     private final ReviewRepository reviewRepository;
 
+    private final DirectorService directorService;
+
     @GetMapping("/all")
     public String showAllMoviesForm(@RequestParam(required = false) String sort,
                                     @RequestParam(required = false) String genre,
                                     @RequestParam(required = false) String year,
                                     @RequestParam(required = false) String search,
+                                    @RequestParam(required = false) Long director,
                                     Model model) {
         List<Genre> allGenres = genreService.findAll();
+        List<Director> allDirectors = directorService.findAll();
         User currentUser = authUtils.getUserEntity();
 
         model.addAttribute("allGenres", allGenres);
+        model.addAttribute("allDirectors", allDirectors);
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentGenre", genre);
         model.addAttribute("currentYear", year);
+        model.addAttribute("currentDirector", director);
         model.addAttribute("user", currentUser);
 
-        List<Movie> movies = movieService.getMovies(sort, genre, year, search);
+        List<Movie> movies = movieService.getMovies(sort, genre, year, search, director);
         model.addAttribute("movies", movies);
         model.addAttribute("searchTerm", search);
         model.addAttribute("title", "Фильмы");
@@ -61,18 +65,22 @@ public class MovieController {
     public String showToWatchList(@RequestParam(required = false) String sort,
                                   @RequestParam(required = false) String genre,
                                   @RequestParam(required = false) String year,
+                                  @RequestParam(required = false) Long director,
                                   Model model) {
         User currentUser = authUtils.getUserEntity();
 
         List<Genre> allGenres = genreService.findAll();
+        List<Director> allDirectors = directorService.findAll();
         model.addAttribute("allGenres", allGenres);
+        model.addAttribute("allDirectors", allDirectors);
 
-        List<Movie> movies = userMovieService.getToWatchList(currentUser, sort, genre, year);
+        List<Movie> movies = userMovieService.getToWatchList(currentUser, sort, genre, year, director);
 
         model.addAttribute("movies", movies);
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentGenre", genre);
         model.addAttribute("currentYear", year);
+        model.addAttribute("currentDirector", director);
         model.addAttribute("user", currentUser);
         model.addAttribute("title", "Буду смотреть");
         model.addAttribute("active", "to-watch");
@@ -84,18 +92,22 @@ public class MovieController {
     public String showWatchedList(@RequestParam(required = false) String sort,
                                     @RequestParam(required = false) String genre,
                                     @RequestParam(required = false) String year,
+                                  @RequestParam(required = false) Long director,
                                     Model model) {
         User currentUser = authUtils.getUserEntity();
 
         List<Genre> allGenres = genreService.findAll();
+        List<Director> allDirectors = directorService.findAll();
         model.addAttribute("allGenres", allGenres);
+        model.addAttribute("allDirectors", allDirectors);
 
-        List<Movie> movies = userMovieService.getWatchedList(currentUser, sort, genre, year);
+        List<Movie> movies = userMovieService.getWatchedList(currentUser, sort, genre, year, director);
 
         model.addAttribute("movies", movies);
         model.addAttribute("currentSort", sort);
         model.addAttribute("currentGenre", genre);
         model.addAttribute("currentYear", year);
+        model.addAttribute("currentDirector", director);
         model.addAttribute("user", currentUser);
         model.addAttribute("title", "Просмотренное");
         model.addAttribute("active", "watched");

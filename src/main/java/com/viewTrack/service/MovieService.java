@@ -10,7 +10,7 @@ public interface MovieService {
 
     List<Movie> getAllMovies();
 
-    List<Movie> getMovies(String sort, String genre, String year, String search);
+    List<Movie> getMovies(String sort, String genre, String year, String search, Long directorId);
 
     Movie getMovieById(Long id);
 }

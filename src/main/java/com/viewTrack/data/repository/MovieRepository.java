@@ -10,8 +10,8 @@ import java.util.Optional;
 
 @Repository
 public interface MovieRepository extends JpaRepository<Movie, Long> {
-    @Query("SELECT DISTINCT m FROM Movie m LEFT JOIN FETCH m.genres")
-    List<Movie> findAllWithGenres();
+    @Query("SELECT m FROM Movie m LEFT JOIN FETCH m.genres g LEFT JOIN FETCH m.directors d")
+    List<Movie> findAllWithGenresAndDirectors();
 
     @Query("""
     SELECT DISTINCT m FROM Movie m

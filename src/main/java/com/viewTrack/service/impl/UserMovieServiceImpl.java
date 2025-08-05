@@ -55,7 +55,7 @@ public class UserMovieServiceImpl implements UserMovieService {
     }
 
     @Override
-    public List<Movie> getToWatchList(User user, String sort, String genre, String year) {
+    public List<Movie> getToWatchList(User user, String sort, String genre, String year, Long directorId) {
         List<UserMovie> userMovies = userMovieRepository.findByUserAndType(user, Type.TO_WATCH);
         List<Movie> movies = userMovies.stream()
                 .map(UserMovie::getMovie)
@@ -65,6 +65,13 @@ public class UserMovieServiceImpl implements UserMovieService {
             movies = movies.stream()
                     .filter(movie -> movie.getGenres().stream()
                             .anyMatch(g -> g.getGenreName().equals(genre)))
+                    .collect(Collectors.toList());
+        }
+
+        if (directorId != null) {
+            movies = movies.stream()
+                    .filter(movie -> movie.getDirectors().stream()
+                            .anyMatch(d -> d.getId().equals(directorId)))
                     .collect(Collectors.toList());
         }
 
@@ -108,7 +115,7 @@ public class UserMovieServiceImpl implements UserMovieService {
     }
 
     @Override
-    public List<Movie> getWatchedList(User user, String sort, String genre, String year) {
+    public List<Movie> getWatchedList(User user, String sort, String genre, String year, Long directorId) {
         List<UserMovie> userMovies = userMovieRepository.findByUserAndType(user, Type.WATCHED);
         List<Movie> movies = userMovies.stream()
                 .map(UserMovie::getMovie)
@@ -118,6 +125,13 @@ public class UserMovieServiceImpl implements UserMovieService {
             movies = movies.stream()
                     .filter(movie -> movie.getGenres().stream()
                             .anyMatch(g -> g.getGenreName().equals(genre)))
+                    .collect(Collectors.toList());
+        }
+
+        if (directorId != null) {
+            movies = movies.stream()
+                    .filter(movie -> movie.getDirectors().stream()
+                            .anyMatch(d -> d.getId().equals(directorId)))
                     .collect(Collectors.toList());
         }
 
