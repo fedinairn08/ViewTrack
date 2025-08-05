@@ -457,24 +457,44 @@
                 rating: score
             })
         })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Ошибка при сохранении оценки');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                updateRatingButton(score);
-                document.getElementById('ratingDropdown').classList.add('hidden');
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Ошибка при сохранении оценки');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            updateRatingButton(score);
+            document.getElementById('ratingDropdown').classList.add('hidden');
 
-                updateAverageRating(data.averageRating, data.ratingsCount);
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-                alert(error.message || 'Не удалось сохранить оценку. Пожалуйста, попробуйте позже.');
-            });
+            updateAverageRating(data.averageRating, data.ratingsCount);
+            updateReviewRating(data.reviewId, score, data.content);
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert(error.message || 'Не удалось сохранить оценку. Пожалуйста, попробуйте позже.');
+        });
+    }
+
+    function updateReviewRating(reviewId, rating, reviewContent) {
+        const reviewElement = document.querySelector(`.bg-white.p-4.rounded-lg.shadow[data-review-id="${reviewId}"]`);
+
+        if (reviewElement) {
+            const ratingElement = reviewElement.querySelector('.text-yellow-500.font-bold');
+            if (ratingElement) {
+                ratingElement.textContent = `${rating}/10`;
+            }
+
+            if (reviewContent) {
+                const contentElement = reviewElement.querySelector('p.text-gray-700, p.text-gray-500.italic');
+                if (contentElement) {
+                    contentElement.textContent = reviewContent;
+                    contentElement.className = 'text-gray-700 text-sm';
+                }
+            }
+        }
     }
 
     function updateAverageRating(averageRating, ratingsCount) {

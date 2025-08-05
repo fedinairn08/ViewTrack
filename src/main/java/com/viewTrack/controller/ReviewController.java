@@ -41,7 +41,9 @@ public class ReviewController {
         Long ratingsCount = reviewRepository.countByMovie(movie);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("review", review);
+        response.put("reviewId", review.getId());
+        response.put("rating", review.getRating());
+        response.put("content", review.getContent());
         response.put("averageRating", movie.getAverageRating());
         response.put("ratingsCount", ratingsCount);
 
