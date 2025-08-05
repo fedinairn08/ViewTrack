@@ -12,10 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -79,10 +76,6 @@ public class MovieServiceImpl implements MovieService {
                     .collect(Collectors.toList());
         }
 
-        if ("releaseDate".equals(sort)) {
-            movies.sort((a, b) -> b.getReleaseDate().compareTo(a.getReleaseDate()));
-        }
-
         if (search != null && !search.isEmpty()) {
             String searchTerm = search.toLowerCase();
             movies = movies.stream()
@@ -111,6 +104,19 @@ public class MovieServiceImpl implements MovieService {
                     default -> true;
                 };
             }).collect(Collectors.toList());
+        }
+
+        if ("releaseDate".equals(sort)) {
+            movies.sort((a, b) -> b.getReleaseDate().compareTo(a.getReleaseDate()));
+        } else if ("rating".equals(sort)) {
+            movies.sort((a, b) -> {
+                float avgRatingA = a.getAverageRating();
+                float avgRatingB = b.getAverageRating();
+
+                return Float.compare(avgRatingB, avgRatingA);
+            });
+        } else {
+            movies.sort(Comparator.comparing(Movie::getTitle));
         }
 
         return movies;
