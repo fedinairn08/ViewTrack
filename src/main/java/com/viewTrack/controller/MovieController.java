@@ -39,6 +39,7 @@ public class MovieController {
     public String showAllMoviesForm(@RequestParam(required = false) String sort,
                                     @RequestParam(required = false) String genre,
                                     @RequestParam(required = false) String year,
+                                    @RequestParam(required = false) String search,
                                     Model model) {
         List<Genre> allGenres = genreService.findAll();
         User currentUser = authUtils.getUserEntity();
@@ -49,8 +50,9 @@ public class MovieController {
         model.addAttribute("currentYear", year);
         model.addAttribute("user", currentUser);
 
-        List<Movie> movies = movieService.getMovies(sort, genre, year);
+        List<Movie> movies = movieService.getMovies(sort, genre, year, search);
         model.addAttribute("movies", movies);
+        model.addAttribute("searchTerm", search);
         model.addAttribute("title", "Фильмы");
         return "allFilms";
     }

@@ -69,7 +69,7 @@ public class MovieServiceImpl implements MovieService {
     }
 
     @Override
-    public List<Movie> getMovies(String sort, String genre, String year) {
+    public List<Movie> getMovies(String sort, String genre, String year, String search) {
         List<Movie> movies = movieRepository.findAllWithGenres();
 
         if (genre != null && !genre.isEmpty()) {
@@ -81,6 +81,13 @@ public class MovieServiceImpl implements MovieService {
 
         if ("releaseDate".equals(sort)) {
             movies.sort((a, b) -> b.getReleaseDate().compareTo(a.getReleaseDate()));
+        }
+
+        if (search != null && !search.isEmpty()) {
+            String searchTerm = search.toLowerCase();
+            movies = movies.stream()
+                    .filter(movie -> movie.getTitle().toLowerCase().contains(searchTerm))
+                    .collect(Collectors.toList());
         }
 
         if (year != null && !year.isEmpty()) {
