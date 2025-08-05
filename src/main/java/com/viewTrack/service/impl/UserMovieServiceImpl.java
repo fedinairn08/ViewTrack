@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,11 +68,6 @@ public class UserMovieServiceImpl implements UserMovieService {
                     .collect(Collectors.toList());
         }
 
-        if ("releaseDate".equals(sort)) {
-            movies.sort((a, b) -> b.getReleaseDate().compareTo(a.getReleaseDate()));
-        }
-
-
         if (year != null && !year.isEmpty()) {
             int currentYear = LocalDate.now().getYear();
             movies = movies.stream().filter(movie -> {
@@ -93,6 +89,19 @@ public class UserMovieServiceImpl implements UserMovieService {
                     default -> true;
                 };
             }).collect(Collectors.toList());
+        }
+
+        if ("releaseDate".equals(sort)) {
+            movies.sort((a, b) -> b.getReleaseDate().compareTo(a.getReleaseDate()));
+        } else if ("rating".equals(sort)) {
+            movies.sort((a, b) -> {
+                float avgRatingA = a.getAverageRating();
+                float avgRatingB = b.getAverageRating();
+
+                return Float.compare(avgRatingB, avgRatingA);
+            });
+        } else {
+            movies.sort(Comparator.comparing(Movie::getTitle));
         }
 
         return movies;
@@ -112,11 +121,6 @@ public class UserMovieServiceImpl implements UserMovieService {
                     .collect(Collectors.toList());
         }
 
-        if ("releaseDate".equals(sort)) {
-            movies.sort((a, b) -> b.getReleaseDate().compareTo(a.getReleaseDate()));
-        }
-
-
         if (year != null && !year.isEmpty()) {
             int currentYear = LocalDate.now().getYear();
             movies = movies.stream().filter(movie -> {
@@ -138,6 +142,19 @@ public class UserMovieServiceImpl implements UserMovieService {
                     default -> true;
                 };
             }).collect(Collectors.toList());
+        }
+
+        if ("releaseDate".equals(sort)) {
+            movies.sort((a, b) -> b.getReleaseDate().compareTo(a.getReleaseDate()));
+        } else if ("rating".equals(sort)) {
+            movies.sort((a, b) -> {
+                float avgRatingA = a.getAverageRating();
+                float avgRatingB = b.getAverageRating();
+
+                return Float.compare(avgRatingB, avgRatingA);
+            });
+        } else {
+            movies.sort(Comparator.comparing(Movie::getTitle));
         }
 
         return movies;
