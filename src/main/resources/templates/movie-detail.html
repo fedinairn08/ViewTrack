@@ -114,7 +114,7 @@
                                 class="px-4 py-2 border border-purple-600 text-purple-600 rounded-md hover:bg-purple-50 transition-colors w-full sm:w-auto"
                                 th:data-movie-id="${movie.id}"
                                 th:classappend="${inToWatchList} ? 'bg-purple-100 text-purple-800 border-transparent' : ''"
-                                th:text="${inToWatchList} ? 'В списке' : 'Добавить в &quot;Буду смотреть&quot;'">
+                                th:text="${inToWatchList} ? 'Добавлено в &quot;Буду смотреть&quot;' : 'Добавить в &quot;Буду смотреть&quot;'">
                             Добавить в "Буду смотреть"
                         </button>
                     </div>
@@ -551,7 +551,7 @@
                 return response.json();
             })
             .then(data => {
-                button.textContent = 'В списке "Буду смотреть"';
+                button.textContent = 'Добавлено в "Буду смотреть"';
                 button.classList.remove('border-purple-600', 'text-purple-600', 'hover:bg-purple-50');
                 button.classList.add('bg-purple-100', 'text-purple-800', 'border-transparent');
             })
