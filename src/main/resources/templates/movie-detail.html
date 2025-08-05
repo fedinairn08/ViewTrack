@@ -148,12 +148,24 @@
                 <h2 class="text-xl font-semibold text-gray-900 mb-2">О фильме</h2>
                 <p th:text="${movie.description}" class="text-gray-700 mb-6 leading-relaxed"></p>
 
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Режиссеры</h3>
-                <div class="flex flex-wrap mb-6">
-                    <span th:each="director : ${movie.directors}"
-                          th:text="${director.fullName}"
-                          class="bg-gray-100 text-gray-800 text-sm font-medium px-2.5 py-0.5 rounded mr-1 mb-1">
-                    </span>
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Режиссеры</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    <div th:each="director : ${movie.directors}" class="bg-white rounded-lg shadow overflow-hidden">
+                        <div th:if="${director.photo != null}" class="w-full h-32">
+                            <img th:src="'/api/image/get/' + ${director.photo.filename}"
+                                 th:alt="${director.fullName}"
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-4">
+                            <h4 th:text="${director.fullName}" class="font-semibold text-lg text-gray-800 mb-2"></h4>
+                            <p th:if="${director.deathDate == null}"
+                               th:text="|Родился: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')}|"
+                               class="text-sm text-gray-600"></p>
+                            <p th:if="${director.deathDate != null}"
+                               th:text="|Жил: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')} - ${#temporals.format(director.deathDate, 'dd.MM.yyyy')}|"
+                               class="text-sm text-gray-600"></p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-6">
