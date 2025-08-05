@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +47,28 @@ public class ReviewServiceImpl implements ReviewService {
 
         review.setRating(rating);
 
-        return reviewRepository.save(review);
+        Review updateReview = reviewRepository.save(review);
+
+        updateMovieAverageRating(movie);
+
+        return updateReview;
+    }
+
+    private void updateMovieAverageRating(Movie movie) {
+        List<Review> reviews = reviewRepository.findByMovieId(movie.getId());
+
+        if (reviews.isEmpty()) {
+            movie.setAverageRating(0.0f);
+        } else {
+            double average = reviews.stream()
+                    .mapToInt(Review::getRating)
+                    .average()
+                    .orElse(0.0);
+
+            movie.setAverageRating((float) average);
+        }
+
+        movieRepository.save(movie);
     }
 
     @Override

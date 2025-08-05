@@ -131,6 +131,20 @@
                     </div>
                 </div>
 
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-2">Средний рейтинг фильма</h2>
+                        <p class="text-sm text-gray-600">на основе <span th:text="${ratingsCount}">0</span> оценок</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-3xl font-bold text-yellow-500"
+                              th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)}">
+                            0.0
+                        </span>
+                        <span class="text-gray-600">/10</span>
+                    </div>
+                </div>
+
                 <h2 class="text-xl font-semibold text-gray-900 mb-2">О фильме</h2>
                 <p th:text="${movie.description}" class="text-gray-700 mb-6 leading-relaxed"></p>
 
@@ -444,20 +458,36 @@
             })
         })
             .then(response => {
-                if (response.ok) {
-                    updateRatingButton(score);
-
-                    document.getElementById('ratingDropdown').classList.add('hidden');
-                } else {
+                if (!response.ok) {
                     return response.json().then(data => {
                         throw new Error(data.message || 'Ошибка при сохранении оценки');
                     });
                 }
+                return response.json();
+            })
+            .then(data => {
+                updateRatingButton(score);
+                document.getElementById('ratingDropdown').classList.add('hidden');
+
+                updateAverageRating(data.averageRating, data.ratingsCount);
             })
             .catch(error => {
                 console.error('Ошибка:', error);
                 alert(error.message || 'Не удалось сохранить оценку. Пожалуйста, попробуйте позже.');
             });
+    }
+
+    function updateAverageRating(averageRating, ratingsCount) {
+        const averageRatingElement = document.querySelector('.text-3xl.font-bold.text-yellow-500');
+        const ratingsCountElement = document.querySelector('.text-sm.text-gray-600 > span');
+
+        if (averageRatingElement) {
+            averageRatingElement.textContent = averageRating.toFixed(1);
+        }
+
+        if (ratingsCountElement) {
+            ratingsCountElement.textContent = ratingsCount;
+        }
     }
 
     function updateRatingButton(score) {
@@ -473,53 +503,6 @@
 
         if (ratedMovieButton) {
             ratedMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
-        }
-    }
-
-    function updateReviewsSection(rating, reviewContent) {
-        const reviewsContainer = document.querySelector('.space-y-4');
-        if (!reviewsContainer) return;
-
-        let userReviewElement = document.querySelector('.user-review');
-        if (userReviewElement) {
-            const starsContainer = userReviewElement.querySelector('.text-yellow-500.font-bold');
-            if (starsContainer) {
-                let starsHTML = '';
-                for (let i = 1; i <= 10; i++) {
-                    starsHTML += i <= rating ? '<span class="text-sm">★</span>' : '<span class="text-sm opacity-50">☆</span>';
-                }
-                starsContainer.innerHTML = starsHTML + ` <span class="text-sm">${rating}/10</span>`;
-            }
-
-            const commentElement = userReviewElement.querySelector('p.text-gray-700');
-            if (commentElement && reviewContent) {
-                commentElement.textContent = reviewContent;
-            }
-        } else {
-            const newReview = document.createElement('div');
-            newReview.className = 'bg-white p-4 rounded-lg shadow user-review';
-
-            let starsHTML = '';
-            for (let i = 1; i <= 10; i++) {
-                starsHTML += i <= rating ? '<span class="text-sm">★</span>' : '<span class="text-sm opacity-50">☆</span>';
-            }
-
-            newReview.innerHTML = `
-            <div class="flex justify-between items-start mb-1">
-                <span class="font-medium text-gray-900">Вы</span>
-                <span class="text-yellow-500 font-bold">
-                    ${starsHTML} <span class="text-sm">${rating}/10</span>
-                </span>
-            </div>
-            ${reviewContent ? `<p class="text-gray-700 text-sm">${reviewContent}</p>` : '<p class="text-gray-500 italic text-sm">Пользователь не оставил комментарий</p>'}
-        `;
-
-            const firstReview = reviewsContainer.querySelector('.bg-white.p-4.rounded-lg.shadow');
-            if (firstReview) {
-                reviewsContainer.insertBefore(newReview, firstReview);
-            } else {
-                reviewsContainer.appendChild(newReview);
-            }
         }
     }
 

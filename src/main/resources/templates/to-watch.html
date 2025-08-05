@@ -116,6 +116,15 @@
                        th:text="|${movie.releaseDate?.year} • ${#strings.listJoin(movie.genres.![genreName], ', ')}|">
                         2023 • Жанр
                     </p>
+                    <div class="mt-2 flex items-center">
+                        <span class="text-yellow-500 font-bold"
+                              th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)} + '/10'">
+                            0.0/10
+                        </span>
+                        <span class="ml-1 text-xs text-gray-500" th:text="(${movie.averageRating > 0} ? 'средний рейтинг' : 'еще не оценен')">
+                    средний рейтинг
+                        </span>
+                    </div>
                     <div class="mt-3 pt-3 border-t border-gray-200">
                         <button
                                 th:data-movie-id="${movie.id}"

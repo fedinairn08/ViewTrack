@@ -1,15 +1,22 @@
 package com.viewTrack.controller;
 
+import com.viewTrack.data.entity.Movie;
 import com.viewTrack.data.entity.Review;
 import com.viewTrack.data.entity.User;
+import com.viewTrack.data.repository.MovieRepository;
+import com.viewTrack.data.repository.ReviewRepository;
 import com.viewTrack.dto.RateMovieRequest;
 import com.viewTrack.dto.request.SaveReviewRequest;
 import com.viewTrack.dto.request.UpdateReviewRequest;
+import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.service.ReviewService;
 import com.viewTrack.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -20,10 +27,25 @@ public class ReviewController {
 
     private final AuthUtils authUtils;
 
+    private final MovieRepository movieRepository;
+
+    private final ReviewRepository reviewRepository;
+
     @PostMapping("/rate-movie")
-    public ResponseEntity<Review> rateMovie(@RequestBody RateMovieRequest request) {
+    public ResponseEntity<Map<String, Object>> rateMovie(@RequestBody RateMovieRequest request) {
         Review review = reviewService.rateMovie(request.getMovieId(), request.getRating());
-        return ResponseEntity.ok(review);
+
+        Movie movie = movieRepository.findById(request.getMovieId())
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
+
+        Long ratingsCount = reviewRepository.countByMovie(movie);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("review", review);
+        response.put("averageRating", movie.getAverageRating());
+        response.put("ratingsCount", ratingsCount);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/update-review")

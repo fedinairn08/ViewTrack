@@ -113,6 +113,8 @@ public class MovieController {
 
         List<Review> movieReviews = reviewRepository.findByMovieId(id);
 
+        Long ratingsCount = reviewRepository.countByMovie(movie);
+
         if (currentUser != null) {
             Optional<Review> userReview = reviewRepository.findByUserAndMovie(currentUser, movie);
 
@@ -133,6 +135,7 @@ public class MovieController {
         model.addAttribute("inWatched", inWatched);
         model.addAttribute("title", movie.getTitle());
         model.addAttribute("movieReviews", movieReviews);
+        model.addAttribute("ratingsCount", ratingsCount);
 
         return "movie-detail";
     }

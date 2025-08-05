@@ -12,6 +12,10 @@ import java.util.Optional;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Review> findByUserAndMovie(User user, Movie movie);
+
     Long countByUser_Id(Long userId);
+
     List<Review> findByMovieId(Long movieId);
+
+    Long countByMovie(Movie movie);
 }

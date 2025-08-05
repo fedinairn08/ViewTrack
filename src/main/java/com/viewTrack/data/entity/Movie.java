@@ -48,6 +48,9 @@ public class Movie extends AbstractEntity {
     @Column(name = "duration_min")
     private int durationMin;
 
+    @Column(name = "average_rating")
+    private float averageRating = 0.0f;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "movie_directors",
