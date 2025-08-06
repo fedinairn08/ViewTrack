@@ -65,6 +65,7 @@ public class MovieController {
     public String showToWatchList(@RequestParam(required = false) String sort,
                                   @RequestParam(required = false) String genre,
                                   @RequestParam(required = false) String year,
+                                  @RequestParam(required = false) String search,
                                   @RequestParam(required = false) Long director,
                                   Model model) {
         User currentUser = authUtils.getUserEntity();
@@ -74,7 +75,7 @@ public class MovieController {
         model.addAttribute("allGenres", allGenres);
         model.addAttribute("allDirectors", allDirectors);
 
-        List<Movie> movies = userMovieService.getToWatchList(currentUser, sort, genre, year, director);
+        List<Movie> movies = userMovieService.getToWatchList(currentUser, sort, genre, year, search, director);
 
         model.addAttribute("movies", movies);
         model.addAttribute("currentSort", sort);
@@ -82,6 +83,7 @@ public class MovieController {
         model.addAttribute("currentYear", year);
         model.addAttribute("currentDirector", director);
         model.addAttribute("user", currentUser);
+        model.addAttribute("searchTerm", search);
         model.addAttribute("title", "Буду смотреть");
         model.addAttribute("active", "to-watch");
 
@@ -90,10 +92,11 @@ public class MovieController {
 
     @GetMapping("/watched")
     public String showWatchedList(@RequestParam(required = false) String sort,
-                                    @RequestParam(required = false) String genre,
-                                    @RequestParam(required = false) String year,
+                                  @RequestParam(required = false) String genre,
+                                  @RequestParam(required = false) String year,
+                                  @RequestParam(required = false) String search,
                                   @RequestParam(required = false) Long director,
-                                    Model model) {
+                                  Model model) {
         User currentUser = authUtils.getUserEntity();
 
         List<Genre> allGenres = genreService.findAll();
@@ -101,7 +104,7 @@ public class MovieController {
         model.addAttribute("allGenres", allGenres);
         model.addAttribute("allDirectors", allDirectors);
 
-        List<Movie> movies = userMovieService.getWatchedList(currentUser, sort, genre, year, director);
+        List<Movie> movies = userMovieService.getWatchedList(currentUser, sort, genre, year, search, director);
 
         model.addAttribute("movies", movies);
         model.addAttribute("currentSort", sort);
@@ -109,6 +112,7 @@ public class MovieController {
         model.addAttribute("currentYear", year);
         model.addAttribute("currentDirector", director);
         model.addAttribute("user", currentUser);
+        model.addAttribute("searchTerm", search);
         model.addAttribute("title", "Просмотренное");
         model.addAttribute("active", "watched");
 
