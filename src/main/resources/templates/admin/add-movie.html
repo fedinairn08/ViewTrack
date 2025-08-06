@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${title}">Добавить фильм | КиноПлатформа</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .genre-card, .director-card {
+            transition: all 0.2s;
+        }
+        .genre-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .genre-selected, .director-selected {
+            background-color: #e0e7ff;
+            border-color: #818cf8;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<header class="bg-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+
+        <nav class="flex space-x-8">
+            <a href="/api/admin/movies"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'films'} ? 'border-purple-500 text-gray-900'">
+                Фильмы
+            </a>
+            <a href="/api/admin/genres"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'watched'} ? 'border-purple-500 text-gray-900'">
+                Жанры
+            </a>
+            <a href="/api/admin/directors"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'to-watch'} ? 'border-purple-500 text-gray-900'">
+                Режиссеры
+            </a>
+        </nav>
+
+        <a href="/api/user/profile" class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                <img th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/40'}"
+                     th:alt="${user.name + ' ' + user.surname}"
+                     class="w-full h-full object-cover"
+                     onerror="this.src='https://via.placeholder.com/40'"/>
+            </div>
+        </a>
+    </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row">
+        <div class="w-full md:w-2/12 mb-4 md:mb-0 flex items-start">
+            <a href="javascript:history.back()" class="inline-flex items-center text-purple-600 hover:text-purple-800 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Назад
+            </a>
+        </div>
+
+        <form id="addMovieForm" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <div class="mb-4">
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Название фильма *</label>
+                        <input type="text" id="title" name="title" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
+                        <p class="mt-1 text-sm text-gray-500">Введите полное название фильма</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="releaseDate" class="block text-sm font-medium text-gray-700 mb-1">Дата выхода *</label>
+                        <input type="date" id="releaseDate" name="releaseDate" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
+                        <p class="mt-1 text-sm text-gray-500">Укажите дату премьеры фильма</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Жанры *</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border border-gray-300 rounded-md p-2">
+                            <div th:each="genre : ${genres}" class="genre-card p-2 border border-gray-200 rounded cursor-pointer hover:bg-gray-50"
+                                 th:attr="data-id=${genre.id}">
+                                <input type="checkbox" class="hidden genre-checkbox" th:value="${genre.id}" name="genreIds">
+                                <span th:text="${genre.genreName}">Жанр</span>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Выберите один или несколько жанров</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Режиссеры *</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border border-gray-300 rounded-md p-2">
+                            <div th:each="director : ${directors}" class="director-card p-2 border border-gray-200 rounded cursor-pointer hover:bg-gray-50"
+                                 th:attr="data-id=${director.id}">
+                                <input type="checkbox" class="hidden director-checkbox" th:value="${director.id}" name="directorIds">
+                                <span th:text="${director.fullName}">Режиссер</span>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Выберите одного или нескольких режиссеров</p>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="mb-4">
+                        <label for="poster" class="block text-sm font-medium text-gray-700 mb-1">Постер</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                            <div id="posterPreview" class="hidden mb-2">
+                                <img id="posterImage" class="max-h-64 mx-auto" alt="Предпросмотр постера">
+                            </div>
+                            <div id="posterPlaceholder">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="mt-1 text-sm text-gray-500">Перетащите сюда изображение или нажмите для выбора</p>
+                                <p class="mt-1 text-xs text-gray-500">Поддерживаемые форматы: JPG, PNG, GIF</p>
+                            </div>
+                            <input type="file" id="poster" name="poster" accept="image/*" class="hidden">
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500">Рекомендуемый размер: 300x450 пикселей</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Описание *</label>
+                <textarea id="description" name="description" rows="6" required
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="Введите подробное описание фильма..."></textarea>
+                <p class="mt-1 text-sm text-gray-500">Опишите сюжет, особенности и интересные факты о фильме</p>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    Отмена
+                </button>
+                <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
+                    Сохранить фильм
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addMovieForm = document.getElementById('addMovieForm');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const posterInput = document.getElementById('poster');
+        const posterPlaceholder = document.getElementById('posterPlaceholder');
+        const posterPreview = document.getElementById('posterPreview');
+        const posterImage = document.getElementById('posterImage');
+
+        posterPlaceholder.addEventListener('click', function() {
+            posterInput.click();
+        });
+
+        posterInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function(event) {
+                    posterImage.src = event.target.result;
+                    posterPlaceholder.classList.add('hidden');
+                    posterPreview.classList.remove('hidden');
+                }
+
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        if (posterInput && posterPlaceholder && posterPreview && posterImage) {
+            posterPlaceholder.addEventListener('click', function() {
+                posterInput.click();
+            });
+
+            posterInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+
+                    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    if (!validImageTypes.includes(file.type)) {
+                        alert('Поддерживаются только форматы JPG, PNG и GIF');
+                        return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Максимальный размер файла: 5 МБ');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        posterImage.src = event.target.result;
+
+                        posterPlaceholder.classList.add('hidden');
+                        posterPreview.classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        } else {
+            console.error('Не все элементы для загрузки постера найдены в DOM');
+        }
+
+        document.querySelectorAll('.genre-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const checkbox = this.querySelector('.genre-checkbox');
+                checkbox.checked = !checkbox.checked;
+
+                if (checkbox.checked) {
+                    this.classList.add('genre-selected');
+                } else {
+                    this.classList.remove('genre-selected');
+                }
+            });
+        });
+
+        document.querySelectorAll('.director-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const checkbox = this.querySelector('.director-checkbox');
+                checkbox.checked = !checkbox.checked;
+
+                if (checkbox.checked) {
+                    this.classList.add('director-selected');
+                } else {
+                    this.classList.remove('director-selected');
+                }
+            });
+        });
+
+        cancelBtn.addEventListener('click', function() {
+            window.location.href = '/api/admin/movies';
+        });
+
+        addMovieForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('title', document.getElementById('title').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('releaseDate', document.getElementById('releaseDate').value);
+
+            const selectedGenres = document.querySelectorAll('.genre-checkbox:checked');
+            selectedGenres.forEach(checkbox => {
+                formData.append('genreIds', checkbox.value);
+            });
+
+            const selectedDirectors = document.querySelectorAll('.director-checkbox:checked');
+            selectedDirectors.forEach(checkbox => {
+                formData.append('directorIds', checkbox.value);
+            });
+
+            if (posterInput.files.length > 0) {
+                formData.append('poster', posterInput.files[0]);
+            }
+
+            const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
+
+            fetch('/api/admin/movies', {
+                method: 'POST',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Ошибка при добавлении фильма');
+                        });
+                    }
+                })
+                .then(movie => {
+                    alert('Фильм успешно добавлен!');
+                    window.location.href = '/api/admin/movies';
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert(error.message || 'Не удалось добавить фильм');
+                });
+        });
+    });
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+</script>
+
+</body>
+</html>

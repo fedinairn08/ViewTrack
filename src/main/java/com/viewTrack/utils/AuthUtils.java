@@ -8,8 +8,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Component
 @RequiredArgsConstructor
 public class AuthUtils {
@@ -22,16 +20,6 @@ public class AuthUtils {
         }
         throw new AppException("UserDetails is null");
     }
-
-    public Optional<UserDetails> getUserDetailsOrNull() {
-        UserDetails principal =  getUserDetails();
-
-        if (principal != null) {
-            return Optional.of(principal);
-        }
-        return Optional.empty();
-    }
-
 
     private static UserDetails getUserDetails() {
         Authentication authentication = SecurityContextHolder

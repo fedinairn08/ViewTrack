@@ -10,4 +10,6 @@ public interface AuthService {
     AuthResponse signUp(String username, String password, String name, String surname);
 
     void changePassword(Long userId, String currentPassword, String newPassword);
+
+    void createAdmin(String username, String password, String name, String surname);
 }

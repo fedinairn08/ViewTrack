@@ -5,6 +5,7 @@ import com.viewTrack.dto.request.JwtRefreshRequest;
 import com.viewTrack.dto.response.AuthResponse;
 import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.service.AuthService;
+import com.viewTrack.service.RoleService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+
+    private final RoleService roleService;
 
     @GetMapping("/signIn")
     public String showSignInForm() {
@@ -38,7 +41,12 @@ public class AuthController {
             cookie.setPath("/");
             cookie.setMaxAge(24 * 60 * 60);
             response.addCookie(cookie);
-            return "redirect:/api/movie/all";
+
+            if (roleService.isUser()) {
+                return "redirect:/api/movie/all";
+            } else {
+                return "redirect:/api/admin/movies";
+            }
         } catch (ResourceNotFoundException e) {
             model.addAttribute("error", "Неверные учетные данные");
             return "/signIn";
@@ -58,7 +66,11 @@ public class AuthController {
                          Model model) {
         try {
             authService.signUp(username, password, name, surname);
-            return "redirect:/allFilms";
+            if (roleService.isUser()) {
+                return "redirect:/api/movie/all";
+            } else {
+                return "redirect:/api/admin/movies";
+            }
         } catch (Exception e) {
             model.addAttribute("error", "Ошибка регистрации: " + e.getMessage());
             return "/signUp";

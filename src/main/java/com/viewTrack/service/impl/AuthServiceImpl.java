@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
@@ -64,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
                 .setPassword(passwordEncoder.encode(password))
                 .setName(name)
                 .setSurname(surname)
-                .setRoles(getDefaultRoles());
+                .setRoles(getDefaultRole());
 
         user = userRepository.save(user);
         setAuthentication(user);
@@ -73,21 +74,6 @@ public class AuthServiceImpl implements AuthService {
                 jwtTokenProvider.createAccessToken(user.getId()),
                 jwtTokenProvider.createRefreshToken(user.getId())
         );
-    }
-
-    private Set<AuthorityRole> getDefaultRoles() {
-        return Set.of(
-                authorityRoleRepository.getAuthorityRoleByName(Role.USER)
-        );
-    }
-
-    private void setAuthentication(User user) {
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user,
-                null,
-                user.getAuthorities()
-        );
-        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @Override
@@ -106,5 +92,39 @@ public class AuthServiceImpl implements AuthService {
         String encodedPassword = passwordEncoder.encode(newPassword);
         user.setPassword(encodedPassword);
         userRepository.save(user);
+    }
+
+    @Transactional
+    @Override
+    public void createAdmin(String login, String password, String name, String surname) {
+        User user = new User()
+                .setLogin(login)
+                .setPassword(passwordEncoder.encode(password))
+                .setName(name)
+                .setSurname(surname)
+                .setRoles(getAdminRole());
+
+        userRepository.save(user);
+    }
+
+    private Set<AuthorityRole> getDefaultRole() {
+        return Set.of(
+                authorityRoleRepository.getAuthorityRoleByName(Role.USER)
+        );
+    }
+
+    private Set<AuthorityRole> getAdminRole() {
+        return Set.of(
+                authorityRoleRepository.getAuthorityRoleByName(Role.USER)
+        );
+    }
+
+    private void setAuthentication(User user) {
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user,
+                null,
+                user.getAuthorities()
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

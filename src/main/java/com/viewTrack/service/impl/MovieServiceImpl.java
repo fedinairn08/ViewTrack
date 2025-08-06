@@ -7,9 +7,12 @@ import com.viewTrack.data.repository.ImageRepository;
 import com.viewTrack.data.repository.MovieRepository;
 import com.viewTrack.dto.request.MovieRequestDto;
 import com.viewTrack.exeption.ResourceNotFoundException;
+import com.viewTrack.s3storage.S3File;
+import com.viewTrack.service.ImageService;
 import com.viewTrack.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -26,6 +29,8 @@ public class MovieServiceImpl implements MovieService {
     private final MovieRepository movieRepository;
 
     private final DirectorRepository directorRepository;
+
+    private final ImageService imageService;
 
     @Override
     public Movie createMovie(MovieRequestDto movieDto) {
@@ -133,5 +138,50 @@ public class MovieServiceImpl implements MovieService {
     public Movie getMovieById(Long id) {
         return movieRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Фильм не найден"));
+    }
+
+    @Override
+    public Movie addMovie(String title, String description, LocalDate releaseDate, List<Long> genreIds, List<Long> directorIds, MultipartFile poster) {
+        Movie movie = new Movie();
+        movie.setTitle(title);
+        movie.setDescription(description);
+        movie.setReleaseDate(releaseDate);
+        movie.setAverageRating(0.0f);
+
+        if (genreIds != null && !genreIds.isEmpty()) {
+            List<Genre> genres = genreRepository.findAllById(genreIds);
+            movie.setGenres(new HashSet<>(genres));
+        }
+
+        if (directorIds != null && !directorIds.isEmpty()) {
+            List<Director> directors = directorRepository.findAllById(directorIds);
+            movie.setDirectors(new HashSet<>(directors));
+        }
+
+        uploadPoster(movie, poster);
+
+        return movieRepository.save(movie);
+    }
+
+    public void uploadPoster(Movie movie, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Файл не может быть пустым");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Поддерживаются только изображения");
+        }
+
+        S3File s3File = imageService.upload(file);
+
+        Image image = Image.builder()
+                .filename(s3File.getFilename())
+                .uploadId(s3File.getUploadId())
+                .build();
+
+        Image savedImage = imageRepository.save(image);
+
+        movie.setPoster(savedImage);
     }
 }
