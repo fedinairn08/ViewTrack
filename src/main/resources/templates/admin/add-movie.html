@@ -156,10 +156,6 @@
         const posterPreview = document.getElementById('posterPreview');
         const posterImage = document.getElementById('posterImage');
 
-        posterPlaceholder.addEventListener('click', function() {
-            posterInput.click();
-        });
-
         posterInput.addEventListener('change', function(e) {
             if (e.target.files && e.target.files[0]) {
                 const reader = new FileReader();
@@ -280,7 +276,6 @@
                     }
                 })
                 .then(movie => {
-                    alert('Фильм успешно добавлен!');
                     window.location.href = '/api/admin/movies';
                 })
                 .catch(error => {
