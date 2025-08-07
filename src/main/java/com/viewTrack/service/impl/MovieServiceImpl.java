@@ -1,21 +1,27 @@
 package com.viewTrack.service.impl;
 
-import com.viewTrack.data.entity.*;
+import com.viewTrack.data.entity.Director;
+import com.viewTrack.data.entity.Genre;
+import com.viewTrack.data.entity.Image;
+import com.viewTrack.data.entity.Movie;
 import com.viewTrack.data.repository.DirectorRepository;
 import com.viewTrack.data.repository.GenreRepository;
 import com.viewTrack.data.repository.ImageRepository;
 import com.viewTrack.data.repository.MovieRepository;
-import com.viewTrack.dto.request.MovieRequestDto;
 import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.s3storage.S3File;
 import com.viewTrack.service.ImageService;
 import com.viewTrack.service.MovieService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,39 +37,6 @@ public class MovieServiceImpl implements MovieService {
     private final DirectorRepository directorRepository;
 
     private final ImageService imageService;
-
-    @Override
-    public Movie createMovie(MovieRequestDto movieDto) {
-        Set<Genre> genres = movieDto.getGenres().stream()
-                .map(genreRepository::findByGenreName)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toSet());
-
-        Image poster = movieDto.getPoster() != null ?
-                imageRepository.findById(movieDto.getPoster()).orElse(null) : null;
-
-        Set<Director> directors = movieDto.getDirectors().stream()
-                .map(directorRepository::findByFullName)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toSet());
-
-        List<Review> reviews = new ArrayList<>();
-
-        Movie movie = Movie.builder()
-                .title(movieDto.getTitle())
-                .genres(genres)
-                .releaseDate(movieDto.getReleaseDate())
-                .description(movieDto.getDescription())
-                .poster(poster)
-                .durationMin(movieDto.getDurationMin())
-                .directors(directors)
-                .reviews(reviews)
-                .build();
-
-        return movieRepository.save(movie);
-    }
 
     @Override
     public List<Movie> getAllMovies() {
@@ -163,6 +136,46 @@ public class MovieServiceImpl implements MovieService {
         return movieRepository.save(movie);
     }
 
+    @Override
+    public Movie updateMovie(Long id, String title, String description, LocalDate releaseDate,
+                             List<Long> genreIds, List<Long> directorIds, MultipartFile poster) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Фильм не найден"));
+
+        movie.setTitle(title);
+        movie.setDescription(description);
+        movie.setReleaseDate(releaseDate);
+
+        if (genreIds != null) {
+            if (genreIds.isEmpty()) {
+                movie.getGenres().clear();
+            } else {
+                List<Genre> genres = genreRepository.findAllById(genreIds);
+                movie.setGenres(new HashSet<>(genres));
+            }
+        }
+
+        if (directorIds != null) {
+            if (directorIds.isEmpty()) {
+                movie.getDirectors().clear();
+            } else {
+                List<Director> directors = directorRepository.findAllById(directorIds);
+                movie.setDirectors(new HashSet<>(directors));
+            }
+        }
+
+        if (poster != null && !poster.isEmpty()) {
+            if (movie.getPoster() != null) {
+                imageService.delete(movie.getPoster().getFilename());
+                movie.setPoster(null);
+            }
+
+            uploadPoster(movie, poster);
+        }
+
+        return movieRepository.save(movie);
+    }
+
     public void uploadPoster(Movie movie, MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Файл не может быть пустым");
@@ -181,6 +194,16 @@ public class MovieServiceImpl implements MovieService {
                 .build();
 
         Image savedImage = imageRepository.save(image);
+
+        if (movie.getPoster() != null) {
+            Image oldImage = movie.getPoster();
+
+            imageService.delete(oldImage.getFilename());
+
+            movie.setPoster(null);
+
+            imageRepository.delete(oldImage);
+        }
 
         movie.setPoster(savedImage);
     }

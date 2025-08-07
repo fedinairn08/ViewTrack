@@ -7,12 +7,12 @@ import com.viewTrack.data.entity.User;
 import com.viewTrack.service.DirectorService;
 import com.viewTrack.service.GenreService;
 import com.viewTrack.service.MovieService;
-import com.viewTrack.service.RoleService;
 import com.viewTrack.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -30,8 +30,6 @@ public class AdminController {
     private final DirectorService directorService;
 
     private final AuthUtils authUtils;
-
-    private final RoleService roleService;
 
     @GetMapping("/movies")
     public String adminMoviesPage(@RequestParam(required = false) String sort,
@@ -74,5 +72,21 @@ public class AdminController {
         model.addAttribute("title", "Добавить новый фильм");
 
         return "admin/add-movie";
+    }
+
+    @GetMapping("/movies/edit/{id}")
+    public String editMovieForm(@PathVariable Long id, Model model) {
+        User currentUser = authUtils.getUserEntity();
+        Movie movie = movieService.getMovieById(id);
+        List<Genre> genres = genreService.findAll();
+        List<Director> directors = directorService.findAll();
+
+        model.addAttribute("movie", movie);
+        model.addAttribute("genres", genres);
+        model.addAttribute("directors", directors);
+        model.addAttribute("user", currentUser);
+        model.addAttribute("title", "Редактировать фильм");
+
+        return "admin/edit-movie";
     }
 }

@@ -175,13 +175,12 @@
     </script>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <a th:each="movie : ${movies}"
-           th:href="@{/api/movie/{id}(id=${movie.id})}"
-           class="block bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
-            <img
-                    th:src="${movie.poster?.filename != null ? '/api/image/get/' + movie.poster.filename : 'https://via.placeholder.com/300x450'}"
-                    th:alt="${movie.title}"
-                    class="w-full h-64 object-cover" />
+        <div th:each="movie : ${movies}" class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="relative">
+                <img th:src="${movie.poster?.filename != null ? '/api/image/get/' + movie.poster.filename : 'https://via.placeholder.com/300x450'}"
+                     th:alt="${movie.title}"
+                     class="w-full h-64 object-cover cursor-default">
+            </div>
             <div class="p-4">
                 <h3 class="text-lg font-semibold text-gray-800" th:text="${movie.title}">
                     Название фильма
@@ -192,16 +191,28 @@
                 </p>
 
                 <div class="mt-2 flex items-center">
-                <span class="text-yellow-500 font-bold"
-                      th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)} + '/10'">
-                    0.0/10
-                </span>
-                    <span class="ml-1 text-xs text-gray-500" th:text="(${movie.averageRating > 0} ? 'средний рейтинг' : 'еще не оценен')">
-                    средний рейтинг
-                </span>
+                    <span class="text-yellow-500 font-bold"
+                          th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)} + '/10'">
+                        0.0/10
+                    </span>
+                    <span class="ml-1 text-xs text-gray-500"
+                          th:text="(${movie.averageRating > 0} ? 'средний рейтинг' : 'еще не оценен')">
+                        средний рейтинг
+                    </span>
+                </div>
+
+                <!-- Кнопка редактирования -->
+                <div class="mt-4">
+                    <a th:href="@{/api/admin/movies/edit/{id}(id=${movie.id})}"
+                       class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Редактировать
+                    </a>
                 </div>
             </div>
-        </a>
+        </div>
 
         <div th:if="${#lists.isEmpty(movies)}" class="col-span-full text-center py-8 text-gray-500">
             Нет доступных фильмов.
