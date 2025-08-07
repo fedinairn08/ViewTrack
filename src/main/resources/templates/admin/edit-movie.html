@@ -114,20 +114,38 @@
       <div>
         <div class="mb-4">
           <label for="poster" class="block text-sm font-medium text-gray-700 mb-1">Постер</label>
-          <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center relative">
             <div id="posterPreview" th:class="${movie.poster != null} ? '' : 'hidden'">
               <img id="posterImage"
                    th:src="${movie.poster != null ? '/api/image/get/' + movie.poster.filename : ''}"
-                   class="max-h-64 mx-auto" alt="Предпросмотр постера">
+                   class="max-h-64 mx-auto cursor-pointer"
+                   alt="Предпросмотр постера"
+                   onclick="document.getElementById('poster').click()">
             </div>
             <div id="posterPlaceholder" th:class="${movie.poster != null} ? 'hidden' : ''">
-              <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+              <svg class="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
+                   stroke="currentColor"
+                   fill="none"
+                   viewBox="0 0 48 48"
+                   aria-hidden="true"
+                   onclick="document.getElementById('poster').click()">
                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              <p class="mt-1 text-sm text-gray-500">Перетащите сюда изображение или нажмите для выбора</p>
+              <p class="mt-1 text-sm text-gray-500 cursor-pointer" onclick="document.getElementById('poster').click()">
+                Перетащите сюда изображение или нажмите для выбора
+              </p>
               <p class="mt-1 text-xs text-gray-500">Поддерживаемые форматы: JPG, PNG, GIF</p>
             </div>
             <input type="file" id="poster" name="poster" accept="image/*" class="hidden">
+            <button type="button"
+                    id="removePosterBtn"
+                    th:class="${movie.poster != null} ? '' : 'hidden'"
+                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    onclick="removePoster()">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
           <p class="mt-1 text-sm text-gray-500">Рекомендуемый размер: 300x450 пикселей</p>
         </div>
@@ -162,9 +180,11 @@
     const posterPreview = document.getElementById('posterPreview');
     const posterImage = document.getElementById('posterImage');
 
-    posterPlaceholder.addEventListener('click', function() {
-      posterInput.click();
-    });
+    if (posterImage) {
+      posterImage.addEventListener('click', function() {
+        posterInput.click();
+      });
+    }
 
     posterInput.addEventListener('change', function(e) {
       if (e.target.files && e.target.files[0]) {
@@ -187,11 +207,13 @@
           posterImage.src = event.target.result;
           posterPlaceholder.classList.add('hidden');
           posterPreview.classList.remove('hidden');
+          removePosterBtn.classList.remove('hidden');
         }
 
         reader.readAsDataURL(file);
       }
     });
+
 
     initializeSelectedGenres();
     initializeSelectedDirectors();
@@ -276,6 +298,32 @@
       });
     });
   });
+
+  function removePoster() {
+    const posterInput = document.getElementById('poster');
+    const posterPlaceholder = document.getElementById('posterPlaceholder');
+    const posterPreview = document.getElementById('posterPreview');
+    const removePosterBtn = document.getElementById('removePosterBtn');
+
+    // Сброс выбранного файла
+    posterInput.value = '';
+
+    // Показываем плейсхолдер
+    posterPreview.classList.add('hidden');
+    posterPlaceholder.classList.remove('hidden');
+    removePosterBtn.classList.add('hidden');
+
+    // Добавляем скрытое поле для удаления постера на сервере
+    let deletePosterInput = document.getElementById('deletePoster');
+    if (!deletePosterInput) {
+      deletePosterInput = document.createElement('input');
+      deletePosterInput.type = 'hidden';
+      deletePosterInput.id = 'deletePoster';
+      deletePosterInput.name = 'deletePoster';
+      deletePosterInput.value = 'true';
+      document.getElementById('editMovieForm').appendChild(deletePosterInput);
+    }
+  }
 
   function initializeSelectedGenres() {
     document.querySelectorAll('.genre-card').forEach(card => {

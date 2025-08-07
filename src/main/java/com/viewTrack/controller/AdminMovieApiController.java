@@ -1,6 +1,10 @@
 package com.viewTrack.controller;
 
+import com.viewTrack.data.entity.Image;
 import com.viewTrack.data.entity.Movie;
+import com.viewTrack.data.repository.ImageRepository;
+import com.viewTrack.data.repository.MovieRepository;
+import com.viewTrack.service.ImageService;
 import com.viewTrack.service.MovieService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,6 +21,12 @@ import java.util.List;
 public class AdminMovieApiController {
 
     private final MovieService movieService;
+
+    private final ImageService imageService;
+
+    private final ImageRepository imageRepository;
+
+    private final MovieRepository movieRepository;
 
     @PostMapping
     public ResponseEntity<Movie> addMovie(
@@ -43,5 +53,25 @@ public class AdminMovieApiController {
 
         Movie movie = movieService.updateMovie(id, title, description, releaseDate, genreIds, directorIds, poster);
         return ResponseEntity.ok(movie);
+    }
+
+    @DeleteMapping("/{id}/poster")
+    public ResponseEntity<?> deleteMoviePoster(@PathVariable Long id) {
+        Movie movie = movieService.getMovieById(id);
+
+        if (movie.getPoster() != null) {
+
+            Image oldImage = movie.getPoster();
+
+            imageService.delete(movie.getPoster().getFilename());
+
+            movie.setPoster(null);
+
+            imageRepository.delete(oldImage);
+
+            movieRepository.save(movie);
+        }
+
+        return ResponseEntity.ok().build();
     }
 }
