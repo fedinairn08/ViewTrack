@@ -60,15 +60,11 @@ public class AdminMovieApiController {
         Movie movie = movieService.getMovieById(id);
 
         if (movie.getPoster() != null) {
-
             Image oldImage = movie.getPoster();
-
             imageService.delete(movie.getPoster().getFilename());
-
             movie.setPoster(null);
 
             imageRepository.delete(oldImage);
-
             movieRepository.save(movie);
         }
 

@@ -304,16 +304,15 @@
     const posterPlaceholder = document.getElementById('posterPlaceholder');
     const posterPreview = document.getElementById('posterPreview');
     const removePosterBtn = document.getElementById('removePosterBtn');
+    const movieId = [[${movie.id}]];
+    const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
 
-    // Сброс выбранного файла
     posterInput.value = '';
 
-    // Показываем плейсхолдер
     posterPreview.classList.add('hidden');
     posterPlaceholder.classList.remove('hidden');
     removePosterBtn.classList.add('hidden');
 
-    // Добавляем скрытое поле для удаления постера на сервере
     let deletePosterInput = document.getElementById('deletePoster');
     if (!deletePosterInput) {
       deletePosterInput = document.createElement('input');
@@ -323,6 +322,33 @@
       deletePosterInput.value = 'true';
       document.getElementById('editMovieForm').appendChild(deletePosterInput);
     }
+
+    fetch(`/api/admin/movies/${movieId}/poster`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(data => {
+          throw new Error(data.message || 'Ошибка при удалении постера');
+        });
+      }
+      return response;
+    })
+    .then(() => {
+      posterPreview.classList.add('hidden');
+      posterPlaceholder.classList.remove('hidden');
+
+      posterInput.value = '';
+
+      alert('Постер успешно удален');
+    })
+    .catch(error => {
+      console.error('Ошибка:', error);
+      alert(error.message || 'Не удалось удалить постер');
+    });
   }
 
   function initializeSelectedGenres() {
