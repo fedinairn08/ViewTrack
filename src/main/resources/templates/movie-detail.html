@@ -481,6 +481,13 @@
             updateRatingButton(score);
             document.getElementById('ratingDropdown').classList.add('hidden');
 
+            const leaveReviewButtonContainer = document.getElementById('leaveReviewButtonContainer');
+            if (leaveReviewButtonContainer) {
+                if (!data.content || data.content.trim() === '') {
+                    leaveReviewButtonContainer.classList.remove('hidden');
+                }
+            }
+
             updateAverageRating(data.averageRating, data.ratingsCount);
             updateReviewRating(data.reviewId, score, data.content);
         })
