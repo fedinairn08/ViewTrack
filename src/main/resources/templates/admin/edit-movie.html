@@ -25,37 +25,21 @@
   <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
 
     <nav class="flex space-x-8">
-      <a href="/api/movie/all"
+      <a href="/api/admin/movies"
          class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
          th:classappend="${active == 'films'} ? 'border-purple-500 text-gray-900'">
         Фильмы
       </a>
-      <a href="/api/movie/watched"
+      <a href="/api/admin/genres"
          class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
          th:classappend="${active == 'watched'} ? 'border-purple-500 text-gray-900'">
-        Просмотренное
+        Жанры
       </a>
-      <a href="/api/movie/to-watch"
+      <a href="/api/admin/directors"
          class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
          th:classappend="${active == 'to-watch'} ? 'border-purple-500 text-gray-900'">
-        Буду смотреть
+        Режиссеры
       </a>
-
-      <div>
-        <a href="/api/admin/movies"
-           class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-           th:classappend="${active == 'admin-movies'} ? 'border-purple-500 text-gray-900'">
-          Фильмы
-        </a>
-        <a href="/api/admin/genres"
-           class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-          Жанры
-        </a>
-        <a href="/api/admin/directors"
-           class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-          Режиссеры
-        </a>
-      </div>
     </nav>
 
     <a href="/api/user/profile" class="flex-shrink-0">
