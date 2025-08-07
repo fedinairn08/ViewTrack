@@ -209,6 +209,9 @@
       }
     });
 
+    initializeSelectedGenres();
+    initializeSelectedDirectors();
+
     document.querySelectorAll('.genre-card').forEach(card => {
       card.addEventListener('click', function() {
         const checkbox = this.querySelector('.genre-checkbox');
@@ -289,6 +292,24 @@
       });
     });
   });
+
+  function initializeSelectedGenres() {
+    document.querySelectorAll('.genre-card').forEach(card => {
+      const checkbox = card.querySelector('.genre-checkbox');
+      if (checkbox.checked) {
+        card.classList.add('genre-selected');
+      }
+    });
+  }
+
+  function initializeSelectedDirectors() {
+    document.querySelectorAll('.director-card').forEach(card => {
+      const checkbox = card.querySelector('.director-checkbox');
+      if (checkbox.checked) {
+        card.classList.add('director-selected');
+      }
+    });
+  }
 
   function getCookie(name) {
     const value = `; ${document.cookie}`;
