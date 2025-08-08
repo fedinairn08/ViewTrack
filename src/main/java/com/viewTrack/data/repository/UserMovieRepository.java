@@ -13,7 +13,12 @@ import java.util.Optional;
 @Repository
 public interface UserMovieRepository extends JpaRepository<UserMovie, Long> {
     List<UserMovie> findByUserAndType(User user, Type type);
+
     Optional<UserMovie> findByUserAndMovie(User user, Movie movie);
+
     List<UserMovie> findByUser(User user);
+
     Long countByUserIdAndType(Long userId, Type type);
+
+    List<UserMovie> findByMovie(Movie movie);
 }

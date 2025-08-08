@@ -18,4 +18,6 @@ public interface MovieService {
 
     Movie updateMovie(Long id, String title, String description, LocalDate releaseDate, List<Long> genreIds,
                       List<Long> directorIds, MultipartFile poster);
+
+    void deleteMovie(Long id);
 }

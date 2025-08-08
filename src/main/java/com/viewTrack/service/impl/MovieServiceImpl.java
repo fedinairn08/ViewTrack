@@ -1,13 +1,7 @@
 package com.viewTrack.service.impl;
 
-import com.viewTrack.data.entity.Director;
-import com.viewTrack.data.entity.Genre;
-import com.viewTrack.data.entity.Image;
-import com.viewTrack.data.entity.Movie;
-import com.viewTrack.data.repository.DirectorRepository;
-import com.viewTrack.data.repository.GenreRepository;
-import com.viewTrack.data.repository.ImageRepository;
-import com.viewTrack.data.repository.MovieRepository;
+import com.viewTrack.data.entity.*;
+import com.viewTrack.data.repository.*;
 import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.s3storage.S3File;
 import com.viewTrack.service.ImageService;
@@ -37,6 +31,10 @@ public class MovieServiceImpl implements MovieService {
     private final DirectorRepository directorRepository;
 
     private final ImageService imageService;
+
+    private final ReviewRepository reviewRepository;
+
+    private final UserMovieRepository userMovieRepository;
 
     @Override
     public List<Movie> getAllMovies() {
@@ -169,6 +167,30 @@ public class MovieServiceImpl implements MovieService {
         }
 
         return movieRepository.save(movie);
+    }
+
+    @Override
+    public void deleteMovie(Long id) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Фильм не найден"));
+
+        List<Review> reviews = reviewRepository.findByMovie(movie);
+        reviewRepository.deleteAll(reviews);
+
+        List<UserMovie> userMovies = userMovieRepository.findByMovie(movie);
+        userMovieRepository.deleteAll(userMovies);
+
+        if (movie.getPoster() != null) {
+            Image oldImage = movie.getPoster();
+
+            imageService.delete(oldImage.getFilename());
+
+            movie.setPoster(null);
+
+            imageRepository.delete(oldImage);
+        }
+
+        movieRepository.delete(movie);
     }
 
     public void uploadPoster(Movie movie, MultipartFile file) {

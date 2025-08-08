@@ -70,4 +70,10 @@ public class AdminMovieApiController {
 
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{movieId}")
+    public ResponseEntity<Void> deleteMovie(@PathVariable Long movieId) {
+        movieService.deleteMovie(movieId);
+        return ResponseEntity.noContent().build();
+    }
 }
