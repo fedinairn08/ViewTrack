@@ -5,6 +5,7 @@ import com.viewTrack.service.DirectorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/directors")
@@ -15,8 +16,10 @@ public class AdminDirectorApiController {
 
     @PostMapping
     public ResponseEntity<Director> addDirector(@RequestParam String fullName,
-                                               @RequestParam(required = false) String birthDate) {
-        Director director = directorService.createDirector(fullName, birthDate);
+                                               @RequestParam(required = false) String birthDate,
+                                               @RequestParam(required = false) String deathDate,
+                                               @RequestParam(required = false) MultipartFile photo) {
+        Director director = directorService.createDirector(fullName, birthDate, deathDate, photo);
         return ResponseEntity.ok(director);
     }
 

@@ -1,13 +1,18 @@
 package com.viewTrack.service.impl;
 
 import com.viewTrack.data.entity.Director;
+import com.viewTrack.data.entity.Image;
 import com.viewTrack.data.entity.Movie;
 import com.viewTrack.data.repository.DirectorRepository;
+import com.viewTrack.data.repository.ImageRepository;
 import com.viewTrack.data.repository.MovieRepository;
+import com.viewTrack.s3storage.S3File;
 import com.viewTrack.service.DirectorService;
+import com.viewTrack.service.ImageService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,6 +24,8 @@ public class DirectorServiceImpl implements DirectorService {
 
     private final DirectorRepository directorRepository;
     private final MovieRepository movieRepository;
+    private final ImageService imageService;
+    private final ImageRepository imageRepository;
 
     @Override
     public List<Director> findAll() {
@@ -79,7 +86,7 @@ public class DirectorServiceImpl implements DirectorService {
     }
 
     @Override
-    public Director createDirector(String fullName, String birthDate) {
+    public Director createDirector(String fullName, String birthDate, String deathDate, MultipartFile photo) {
         Director director = new Director();
         director.setFullName(fullName.trim());
         
@@ -91,7 +98,33 @@ public class DirectorServiceImpl implements DirectorService {
             }
         }
         
+        if (deathDate != null && !deathDate.trim().isEmpty()) {
+            try {
+                LocalDate parsedDate = LocalDate.parse(deathDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                director.setDeathDate(parsedDate);
+            } catch (Exception e) {
+            }
+        }
+        
+        if (photo != null && !photo.isEmpty()) {
+            uploadPhoto(director, photo);
+        }
+        
         return directorRepository.save(director);
+    }
+
+    private void uploadPhoto(Director director, MultipartFile file) {
+        try {
+            S3File s3File = imageService.upload(file);
+            Image image = Image.builder()
+                    .filename(s3File.getFilename())
+                    .uploadId(s3File.getUploadId())
+                    .build();
+            image = imageRepository.save(image);
+            director.setPhoto(image);
+        } catch (Exception e) {
+            throw new RuntimeException("Ошибка при загрузке фотографии", e);
+        }
     }
 
     @Override

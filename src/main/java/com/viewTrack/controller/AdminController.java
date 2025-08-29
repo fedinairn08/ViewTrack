@@ -133,4 +133,14 @@ public class AdminController {
 
         return "admin/directors";
     }
+
+    @GetMapping("/directors/add")
+    public String addDirectorForm(Model model) {
+        User currentUser = authUtils.getUserEntity();
+
+        model.addAttribute("user", currentUser);
+        model.addAttribute("title", "Добавить нового режиссера");
+
+        return "admin/add-director";
+    }
 }
