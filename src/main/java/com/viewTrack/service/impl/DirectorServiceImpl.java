@@ -141,6 +141,13 @@ public class DirectorServiceImpl implements DirectorService {
             movieRepository.save(movie);
         }
 
+        if (director.getPhoto() != null) {
+            Image oldImage = director.getPhoto();
+            imageService.delete(oldImage.getFilename());
+            director.setPhoto(null);
+            imageRepository.delete(oldImage);
+        }
+
         directorRepository.deleteById(id);
     }
 }

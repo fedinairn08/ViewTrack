@@ -104,10 +104,6 @@
             event.preventDefault();
             event.stopPropagation();
 
-            if (!confirm('Вы уверены, что хотите удалить этого режиссера?')) {
-                return;
-            }
-
             const directorId = button.getAttribute('data-director-id');
             const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
 
