@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${title}">Управление жанрами | КиноПлатформа</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<header class="bg-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+
+        <nav class="flex space-x-8">
+            <a href="/api/admin/movies"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'films'} ? 'border-purple-500 text-gray-900'">
+                Фильмы
+            </a>
+            <a href="/api/admin/genres"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'watched'} ? 'border-purple-500 text-gray-900'">
+                Жанры
+            </a>
+            <a href="/api/admin/directors"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'to-watch'} ? 'border-purple-500 text-gray-900'">
+                Режиссеры
+            </a>
+        </nav>
+
+        <a href="/api/user/profile" class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                <img th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/40'}"
+                     th:alt="${user.name + ' ' + user.surname}"
+                     class="w-full h-full object-cover"
+                     onerror="this.src='https://via.placeholder.com/40'"/>
+            </div>
+        </a>
+    </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Жанры</h1>
+        <a href="/api/admin/genres/add" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Добавить жанр
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Название
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Действия
+                </th>
+            </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+            <tr th:each="genre : ${genres}" class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="text-sm font-medium text-gray-900" th:text="${genre.genreName}">Жанр</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button th:attr="data-genre-id=${genre.id}"
+                            onclick="deleteGenre(event, this)"
+                            class="text-red-600 hover:text-red-900">
+                        Удалить
+                    </button>
+                </td>
+            </tr>
+
+            <tr th:if="${#lists.isEmpty(genres)}">
+                <td colspan="2" class="px-6 py-4 text-center text-gray-500">
+                    Жанров пока нет.
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        window.deleteGenre = function(event, button) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const genreId = button.getAttribute('data-genre-id');
+            const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
+
+            fetch(`/api/admin/genres/${genreId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Не удалось удалить жанр');
+                        });
+                    }
+                    return response;
+                })
+                .then(() => {
+                    const row = button.closest('tr');
+                    if (row) {
+                        row.remove();
+                    }
+
+                    const tbody = document.querySelector('tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        const emptyRow = document.createElement('tr');
+                        emptyRow.innerHTML = `
+                        <td colspan="2" class="px-6 py-4 text-center text-gray-500">
+                            Жанров пока нет.
+                        </td>
+                    `;
+                        tbody.appendChild(emptyRow);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert(error.message || 'Не удалось удалить жанр');
+                });
+        };
+    });
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+</script>
+
+</body>
+</html>

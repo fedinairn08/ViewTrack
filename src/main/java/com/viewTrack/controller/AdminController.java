@@ -89,4 +89,27 @@ public class AdminController {
 
         return "admin/edit-movie";
     }
+
+    @GetMapping("/genres")
+    public String adminGenresPage(Model model) {
+        User currentUser = authUtils.getUserEntity();
+        List<Genre> genres = genreService.findAll();
+
+        model.addAttribute("genres", genres);
+        model.addAttribute("user", currentUser);
+        model.addAttribute("title", "Управление жанрами");
+        model.addAttribute("active", "genres");
+
+        return "admin/genres";
+    }
+
+    @GetMapping("/genres/add")
+    public String addGenreForm(Model model) {
+        User currentUser = authUtils.getUserEntity();
+
+        model.addAttribute("user", currentUser);
+        model.addAttribute("title", "Добавить новый жанр");
+
+        return "admin/add-genre";
+    }
 }

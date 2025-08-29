@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${title}">Добавить жанр | КиноПлатформа</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<header class="bg-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+
+        <nav class="flex space-x-8">
+            <a href="/api/admin/movies"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'films'} ? 'border-purple-500 text-gray-900'">
+                Фильмы
+            </a>
+            <a href="/api/admin/genres"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'watched'} ? 'border-purple-500 text-gray-900'">
+                Жанры
+            </a>
+            <a href="/api/admin/directors"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'to-watch'} ? 'border-purple-500 text-gray-900'">
+                Режиссеры
+            </a>
+        </nav>
+
+        <a href="/api/user/profile" class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                <img th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/40'}"
+                     th:alt="${user.name + ' ' + user.surname}"
+                     class="w-full h-full object-cover"
+                     onerror="this.src='https://via.placeholder.com/40'"/>
+            </div>
+        </a>
+    </div>
+</header>
+
+<main class="max-w-xl mx-auto px-4 py-8">
+    <div class="flex items-start space-x-4">
+        <a href="javascript:history.back()" class="inline-flex items-center text-purple-600 hover:text-purple-800 font-medium mt-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+            </svg>
+            Назад
+        </a>
+        
+        <div class="flex-1">
+            <h1 class="text-2xl font-bold text-gray-800 text-center mb-4">Добавить новый жанр</h1>
+            
+            <form id="addGenreForm" class="bg-white p-6 rounded-lg shadow">
+        <div class="mb-4">
+            <label for="genreName" class="block text-sm font-medium text-gray-700 mb-1">Название жанра *</label>
+            <input type="text" id="genreName" name="genreName" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+                   placeholder="Введите название жанра">
+            <p class="mt-1 text-sm text-gray-500">Например: Боевик, Драма, Комедия</p>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+            <button type="button" id="cancelBtn" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                Отмена
+            </button>
+            <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
+                Добавить жанр
+            </button>
+        </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const addGenreForm = document.getElementById('addGenreForm');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        cancelBtn.addEventListener('click', function() {
+            window.location.href = '/api/admin/genres';
+        });
+
+        addGenreForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const genreName = document.getElementById('genreName').value.trim();
+
+            if (!genreName) {
+                alert('Пожалуйста, укажите название жанра');
+                return;
+            }
+
+            const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
+
+            fetch('/api/admin/genres', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: `genreName=${encodeURIComponent(genreName)}`
+            })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    } else {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Ошибка при добавлении жанра');
+                        });
+                    }
+                })
+                .then(genre => {
+                    window.location.href = '/api/admin/genres';
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert(error.message || 'Не удалось добавить жанр');
+                });
+        });
+    });
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+</script>
+
+</body>
+</html>

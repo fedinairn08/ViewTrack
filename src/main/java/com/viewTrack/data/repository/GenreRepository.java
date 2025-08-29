@@ -11,4 +11,6 @@ public interface GenreRepository extends JpaRepository<Genre, Long> {
     Optional<Genre> findByGenreName(String genreName);
 
     Boolean existsByGenreNameIgnoreCase(String genreName);
+
+    Boolean existsByGenreName(String genreName);
 }
