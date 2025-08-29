@@ -1,6 +1,7 @@
 package com.viewTrack.service.impl;
 
 import com.viewTrack.data.entity.User;
+import com.viewTrack.data.enums.Role;
 import com.viewTrack.service.RoleService;
 import com.viewTrack.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ public class RoleServiceImpl implements RoleService {
         try {
             User user = authUtils.getUserEntity();
             return user.getRoles().stream()
-                    .anyMatch(role -> "ADMIN".equals(role.getName()));
+                    .anyMatch(role -> Role.ADMIN.equals(role.getName()));
         } catch (Exception e) {
             return false;
         }
@@ -28,7 +29,7 @@ public class RoleServiceImpl implements RoleService {
         try {
             User user = authUtils.getUserEntity();
             return user.getRoles().stream()
-                    .anyMatch(role -> "USER".equals(role.getName()));
+                    .anyMatch(role -> Role.USER.equals(role.getName()));
         } catch (Exception e) {
             return false;
         }

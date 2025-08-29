@@ -115,7 +115,7 @@ public class AuthServiceImpl implements AuthService {
 
     private Set<AuthorityRole> getAdminRole() {
         return Set.of(
-                authorityRoleRepository.getAuthorityRoleByName(Role.USER)
+                authorityRoleRepository.getAuthorityRoleByName(Role.ADMIN)
         );
     }
 
