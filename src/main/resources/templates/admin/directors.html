@@ -177,9 +177,19 @@
                 <h3 class="text-lg font-semibold text-gray-800" th:text="${director.fullName}">
                     Имя режиссера
                 </h3>
-                <p class="text-sm text-gray-500" th:text="${director.birthDate != null ? #temporals.format(director.birthDate, 'dd.MM.yyyy') : 'Дата рождения не указана'}">
-                    Дата рождения
-                </p>
+                <div class="text-sm text-gray-500">
+                    <p th:if="${director.birthDate != null and director.deathDate == null}" 
+                       th:text="|Родился: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')}|">
+                        Дата рождения
+                    </p>
+                    <p th:if="${director.birthDate != null and director.deathDate != null}" 
+                       th:text="|Жил: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')} - ${#temporals.format(director.deathDate, 'dd.MM.yyyy')}|">
+                        Годы жизни
+                    </p>
+                    <p th:if="${director.birthDate == null}" class="text-gray-400">
+                        Дата рождения не указана
+                    </p>
+                </div>
 
                 <div class="mt-4">
                     <a th:href="@{/api/admin/directors/edit/{id}(id=${director.id})}"
