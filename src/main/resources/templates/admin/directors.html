@@ -158,9 +158,20 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div th:each="director : ${directors}" class="bg-white rounded-lg shadow overflow-hidden">
             <div class="relative">
-                <img th:src="${director.photo?.filename != null ? '/api/image/get/' + director.photo.filename : 'https://via.placeholder.com/300x400'}"
-                     th:alt="${director.fullName}"
-                     class="w-full h-64 object-cover cursor-default">
+                <div th:if="${director.photo?.filename != null}">
+                    <img th:src="'/api/image/get/' + ${director.photo.filename}"
+                         th:alt="${director.fullName}"
+                         class="w-full h-64 object-cover cursor-default">
+                </div>
+                <div th:if="${director.photo?.filename == null}" 
+                     class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                    <div class="text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <p class="mt-1 text-sm text-gray-500">Фото отсутствует</p>
+                    </div>
+                </div>
             </div>
             <div class="p-4">
                 <h3 class="text-lg font-semibold text-gray-800" th:text="${director.fullName}">
