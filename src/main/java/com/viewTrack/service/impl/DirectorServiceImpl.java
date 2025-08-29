@@ -86,6 +86,12 @@ public class DirectorServiceImpl implements DirectorService {
     }
 
     @Override
+    public Director getDirectorById(Long id) {
+        return directorRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Режиссер не найден"));
+    }
+
+    @Override
     public Director createDirector(String fullName, String birthDate, String deathDate, MultipartFile photo) {
         Director director = new Director();
         director.setFullName(fullName.trim());
@@ -107,6 +113,48 @@ public class DirectorServiceImpl implements DirectorService {
         }
         
         if (photo != null && !photo.isEmpty()) {
+            uploadPhoto(director, photo);
+        }
+        
+        return directorRepository.save(director);
+    }
+
+    @Override
+    public Director updateDirector(Long id, String fullName, String birthDate, String deathDate, MultipartFile photo) {
+        Director director = directorRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Режиссер не найден"));
+
+        director.setFullName(fullName.trim());
+        
+        if (birthDate != null && !birthDate.trim().isEmpty()) {
+            try {
+                LocalDate parsedDate = LocalDate.parse(birthDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                director.setBirthDate(parsedDate);
+            } catch (Exception e) {
+                director.setBirthDate(null);
+            }
+        } else {
+            director.setBirthDate(null);
+        }
+        
+        if (deathDate != null && !deathDate.trim().isEmpty()) {
+            try {
+                LocalDate parsedDate = LocalDate.parse(deathDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                director.setDeathDate(parsedDate);
+            } catch (Exception e) {
+                director.setDeathDate(null);
+            }
+        } else {
+            director.setDeathDate(null);
+        }
+        
+        if (photo != null && !photo.isEmpty()) {
+            if (director.getPhoto() != null) {
+                Image oldImage = director.getPhoto();
+                imageService.delete(oldImage.getFilename());
+                director.setPhoto(null);
+                imageRepository.delete(oldImage);
+            }
             uploadPhoto(director, photo);
         }
         

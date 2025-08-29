@@ -136,7 +136,7 @@ public class MovieServiceImpl implements MovieService {
 
     @Override
     public Movie updateMovie(Long id, String title, String description, LocalDate releaseDate,
-                             List<Long> genreIds, List<Long> directorIds, MultipartFile poster) {
+                             List<Long> genreIds, List<Long> directorIds, MultipartFile poster, String deletePoster) {
         Movie movie = movieRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Фильм не найден"));
 
@@ -162,7 +162,14 @@ public class MovieServiceImpl implements MovieService {
             }
         }
 
-        if (poster != null && !poster.isEmpty()) {
+        if ("true".equals(deletePoster)) {
+            if (movie.getPoster() != null) {
+                Image oldImage = movie.getPoster();
+                imageService.delete(oldImage.getFilename());
+                movie.setPoster(null);
+                imageRepository.delete(oldImage);
+            }
+        } else if (poster != null && !poster.isEmpty()) {
             uploadPoster(movie, poster);
         }
 
@@ -199,7 +206,7 @@ public class MovieServiceImpl implements MovieService {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
+        if (!contentType.startsWith("image/")) {
             throw new IllegalArgumentException("Поддерживаются только изображения");
         }
 

@@ -23,6 +23,16 @@ public class AdminDirectorApiController {
         return ResponseEntity.ok(director);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Director> updateDirector(@PathVariable Long id,
+                                                  @RequestParam String fullName,
+                                                  @RequestParam(required = false) String birthDate,
+                                                  @RequestParam(required = false) String deathDate,
+                                                  @RequestParam(required = false) MultipartFile photo) {
+        Director director = directorService.updateDirector(id, fullName, birthDate, deathDate, photo);
+        return ResponseEntity.ok(director);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDirector(@PathVariable Long id) {
         directorService.deleteDirector(id);

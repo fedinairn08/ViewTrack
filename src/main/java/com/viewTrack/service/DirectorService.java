@@ -10,7 +10,11 @@ public interface DirectorService {
     
     List<Director> getDirectors(String sort, String search);
     
+    Director getDirectorById(Long id);
+    
     Director createDirector(String fullName, String birthDate, String deathDate, MultipartFile photo);
+    
+    Director updateDirector(Long id, String fullName, String birthDate, String deathDate, MultipartFile photo);
     
     void deleteDirector(Long id);
 }

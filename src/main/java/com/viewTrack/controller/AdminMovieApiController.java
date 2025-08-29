@@ -49,9 +49,10 @@ public class AdminMovieApiController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDate,
             @RequestParam(required = false) List<Long> genreIds,
             @RequestParam(required = false) List<Long> directorIds,
-            @RequestParam(required = false) MultipartFile poster) {
+            @RequestParam(required = false) MultipartFile poster,
+            @RequestParam(required = false) String deletePoster) {
 
-        Movie movie = movieService.updateMovie(id, title, description, releaseDate, genreIds, directorIds, poster);
+        Movie movie = movieService.updateMovie(id, title, description, releaseDate, genreIds, directorIds, poster, deletePoster);
         return ResponseEntity.ok(movie);
     }
 

@@ -17,7 +17,7 @@ public interface MovieService {
                    List<Long> directorIds, MultipartFile poster);
 
     Movie updateMovie(Long id, String title, String description, LocalDate releaseDate, List<Long> genreIds,
-                      List<Long> directorIds, MultipartFile poster);
+                      List<Long> directorIds, MultipartFile poster, String deletePoster);
 
     void deleteMovie(Long id);
 }
