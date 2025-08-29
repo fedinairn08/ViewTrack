@@ -120,7 +120,7 @@ public class DirectorServiceImpl implements DirectorService {
     }
 
     @Override
-    public Director updateDirector(Long id, String fullName, String birthDate, String deathDate, MultipartFile photo) {
+    public Director updateDirector(Long id, String fullName, String birthDate, String deathDate, MultipartFile photo, String deletePhoto) {
         Director director = directorRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Режиссер не найден"));
 
@@ -147,8 +147,16 @@ public class DirectorServiceImpl implements DirectorService {
         } else {
             director.setDeathDate(null);
         }
-        
-        if (photo != null && !photo.isEmpty()) {
+
+        if ("true".equals(deletePhoto)) {
+            // Удаляем фотографию
+            if (director.getPhoto() != null) {
+                Image oldImage = director.getPhoto();
+                imageService.delete(oldImage.getFilename());
+                director.setPhoto(null);
+                imageRepository.delete(oldImage);
+            }
+        } else if (photo != null && !photo.isEmpty()) {
             if (director.getPhoto() != null) {
                 Image oldImage = director.getPhoto();
                 imageService.delete(oldImage.getFilename());

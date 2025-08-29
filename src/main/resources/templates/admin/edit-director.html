@@ -82,20 +82,36 @@
             <div>
                 <div class="mb-4">
                     <label for="photo" class="block text-sm font-medium text-gray-700 mb-1">Фотография</label>
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                        <div id="photoPreview" class="mb-2">
-                            <img id="photoImage" 
-                                 th:src="${director.photo?.filename != null ? '/api/image/get/' + director.photo.filename : 'https://via.placeholder.com/300x400'}"
-                                 class="max-h-64 mx-auto" alt="Фотография режиссера">
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center relative">
+                        <div id="photoPreview" th:class="${director.photo != null} ? '' : 'hidden'">
+                            <img id="photoImage"
+                                 th:src="${director.photo != null ? '/api/image/get/' + director.photo.filename : ''}"
+                                 class="max-h-64 mx-auto cursor-pointer"
+                                 alt="Фотография режиссера">
                         </div>
-                        <div id="photoPlaceholder" class="hidden">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                        <div id="photoPlaceholder" th:class="${director.photo != null} ? 'hidden' : ''">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 cursor-pointer"
+                                 stroke="currentColor"
+                                 fill="none"
+                                 viewBox="0 0 48 48"
+                                 aria-hidden="true">
                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
-                            <p class="mt-1 text-sm text-gray-500">Перетащите сюда изображение или нажмите для выбора</p>
+                            <p class="mt-1 text-sm text-gray-500 cursor-pointer">
+                                Перетащите сюда изображение или нажмите для выбора
+                            </p>
                             <p class="mt-1 text-xs text-gray-500">Поддерживаемые форматы: JPG, PNG, GIF</p>
                         </div>
                         <input type="file" id="photo" name="photo" accept="image/*" class="hidden">
+                        <button type="button"
+                                id="removePhotoBtn"
+                                th:class="${director.photo != null} ? '' : 'hidden'"
+                                class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                onclick="removePhoto()">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
                     <p class="mt-1 text-sm text-gray-500">Рекомендуемый размер: 300x400 пикселей</p>
                 </div>
@@ -131,6 +147,10 @@
                 photoInput.click();
             });
 
+            photoImage.addEventListener('click', function() {
+                photoInput.click();
+            });
+
             photoInput.addEventListener('change', function(e) {
                 if (e.target.files && e.target.files[0]) {
                     const file = e.target.files[0];
@@ -152,6 +172,7 @@
                         photoImage.src = event.target.result;
                         photoPlaceholder.classList.add('hidden');
                         photoPreview.classList.remove('hidden');
+                        removePhotoBtn.classList.remove('hidden');
                     };
 
                     reader.readAsDataURL(file);
@@ -188,6 +209,11 @@
                 formData.append('photo', photoFile);
             }
 
+            const deletePhotoInput = document.getElementById('deletePhoto');
+            if (deletePhotoInput && deletePhotoInput.value === 'true') {
+                formData.append('deletePhoto', 'true');
+            }
+
             const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
 
             fetch(`/api/admin/directors/${directorId}`, {
@@ -215,6 +241,29 @@
             });
         });
     });
+
+    function removePhoto() {
+        const photoInput = document.getElementById('photo');
+        const photoPlaceholder = document.getElementById('photoPlaceholder');
+        const photoPreview = document.getElementById('photoPreview');
+        const removePhotoBtn = document.getElementById('removePhotoBtn');
+
+        photoInput.value = '';
+
+        photoPreview.classList.add('hidden');
+        photoPlaceholder.classList.remove('hidden');
+        removePhotoBtn.classList.add('hidden');
+
+        let deletePhotoInput = document.getElementById('deletePhoto');
+        if (!deletePhotoInput) {
+            deletePhotoInput = document.createElement('input');
+            deletePhotoInput.type = 'hidden';
+            deletePhotoInput.id = 'deletePhoto';
+            deletePhotoInput.name = 'deletePhoto';
+            deletePhotoInput.value = 'true';
+            document.getElementById('editDirectorForm').appendChild(deletePhotoInput);
+        }
+    }
 
     function getCookie(name) {
         const value = `; ${document.cookie}`;

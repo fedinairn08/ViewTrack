@@ -28,8 +28,9 @@ public class AdminDirectorApiController {
                                                   @RequestParam String fullName,
                                                   @RequestParam(required = false) String birthDate,
                                                   @RequestParam(required = false) String deathDate,
-                                                  @RequestParam(required = false) MultipartFile photo) {
-        Director director = directorService.updateDirector(id, fullName, birthDate, deathDate, photo);
+                                                  @RequestParam(required = false) MultipartFile photo,
+                                                  @RequestParam(required = false) String deletePhoto) {
+        Director director = directorService.updateDirector(id, fullName, birthDate, deathDate, photo, deletePhoto);
         return ResponseEntity.ok(director);
     }
 

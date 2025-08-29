@@ -14,7 +14,7 @@ public interface DirectorService {
     
     Director createDirector(String fullName, String birthDate, String deathDate, MultipartFile photo);
     
-    Director updateDirector(Long id, String fullName, String birthDate, String deathDate, MultipartFile photo);
+    Director updateDirector(Long id, String fullName, String birthDate, String deathDate, MultipartFile photo, String deletePhoto);
     
     void deleteDirector(Long id);
 }
