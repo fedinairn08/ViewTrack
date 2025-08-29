@@ -9,11 +9,21 @@
     .genre-card, .director-card {
       transition: all 0.2s;
     }
-    .genre-card:hover {
+    .genre-card:hover:not(.genre-selected) {
       transform: translateY(-2px);
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      background-color: #f9fafb;
+    }
+    .director-card:hover:not(.director-selected) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      background-color: #f9fafb;
     }
     .genre-selected, .director-selected {
+      background-color: #e0e7ff;
+      border-color: #818cf8;
+    }
+    .genre-selected:hover, .director-selected:hover {
       background-color: #e0e7ff;
       border-color: #818cf8;
     }
@@ -87,7 +97,7 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">Жанры *</label>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border border-gray-300 rounded-md p-2">
-            <div th:each="genre : ${genres}" class="genre-card p-2 border border-gray-200 rounded cursor-pointer hover:bg-gray-50"
+            <div th:each="genre : ${genres}" class="genre-card p-2 border border-gray-200 rounded cursor-pointer"
                  th:attr="data-id=${genre.id}">
               <input type="checkbox" class="hidden genre-checkbox" th:value="${genre.id}" name="genreIds"
                      th:checked="${movie.genres?.contains(genre)}">
@@ -100,7 +110,7 @@
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">Режиссеры *</label>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border border-gray-300 rounded-md p-2">
-            <div th:each="director : ${directors}" class="director-card p-2 border border-gray-200 rounded cursor-pointer hover:bg-gray-50"
+            <div th:each="director : ${directors}" class="director-card p-2 border border-gray-200 rounded cursor-pointer"
                  th:attr="data-id=${director.id}">
               <input type="checkbox" class="hidden director-checkbox" th:value="${director.id}" name="directorIds"
                      th:checked="${movie.directors?.contains(director)}">
@@ -265,7 +275,6 @@
         formData.append('poster', posterInput.files[0]);
       }
 
-      // Проверяем, нужно ли удалить постер
       const deletePosterInput = document.getElementById('deletePoster');
       if (deletePosterInput && deletePosterInput.value === 'true') {
         formData.append('deletePoster', 'true');
@@ -305,15 +314,12 @@
     const posterPreview = document.getElementById('posterPreview');
     const removePosterBtn = document.getElementById('removePosterBtn');
 
-    // Очищаем выбранный файл
     posterInput.value = '';
 
-    // Скрываем предпросмотр и показываем placeholder
     posterPreview.classList.add('hidden');
     posterPlaceholder.classList.remove('hidden');
     removePosterBtn.classList.add('hidden');
 
-    // Добавляем скрытое поле для отметки удаления постера
     let deletePosterInput = document.getElementById('deletePoster');
     if (!deletePosterInput) {
       deletePosterInput = document.createElement('input');
