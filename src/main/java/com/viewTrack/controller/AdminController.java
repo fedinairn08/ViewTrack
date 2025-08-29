@@ -116,4 +116,21 @@ public class AdminController {
 
         return "admin/add-genre";
     }
+
+    @GetMapping("/directors")
+    public String adminDirectorsPage(@RequestParam(required = false) String sort,
+                                     @RequestParam(required = false) String search,
+                                     Model model) {
+        User currentUser = authUtils.getUserEntity();
+        List<Director> directors = directorService.getDirectors(sort, search);
+
+        model.addAttribute("directors", directors);
+        model.addAttribute("user", currentUser);
+        model.addAttribute("title", "Управление режиссерами");
+        model.addAttribute("active", "directors");
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("searchTerm", search);
+
+        return "admin/directors";
+    }
 }

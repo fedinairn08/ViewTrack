@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>КиноПлатформа</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<header class="bg-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+
+        <nav class="flex space-x-8">
+            <a href="/api/admin/movies"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Фильмы
+            </a>
+            <a href="/api/admin/genres"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                Жанры
+            </a>
+            <a href="/api/admin/directors"
+               class="py-2 px-1 border-b-2 font-medium text-sm transition-colors border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+               th:classappend="${active == 'directors'} ? 'border-purple-500 text-gray-900'">
+                Режиссеры
+            </a>
+        </nav>
+
+        <a href="/api/user/profile" class="flex-shrink-0">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                <img th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/40'}"
+                     th:alt="${user.name + ' ' + user.surname}"
+                     class="w-full h-full object-cover"
+                     onerror="this.src='https://via.placeholder.com/40'"/>
+            </div>
+        </a>
+    </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">
+        <span th:text="${title}">Режиссеры</span>
+    </h1>
+
+    <form id="filterForm" method="get" class="flex flex-wrap gap-4 items-end mb-6 bg-white p-4 rounded-lg shadow">
+        <div class="flex flex-col w-full sm:w-auto sm:flex-1">
+            <label for="search" class="text-sm font-medium text-gray-700 mb-1">Поиск по имени</label>
+            <div class="relative">
+                <input type="text"
+                       id="search"
+                       name="search"
+                       th:value="${searchTerm}"
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                       placeholder="Введите имя режиссера...">
+                <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col">
+            <label for="sort" class="text-sm font-medium text-gray-700 mb-1">Сортировка</label>
+            <select id="sort" name="sort" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="name" th:selected="${currentSort == null || currentSort == 'name'}">По имени (А-Я)</option>
+                <option value="nameDesc" th:selected="${currentSort == 'nameDesc'}">По имени (Я-А)</option>
+                <option value="birthDate" th:selected="${currentSort == 'birthDate'}">По дате рождения (от молодых к старым)</option>
+                <option value="birthDateAsc" th:selected="${currentSort == 'birthDateAsc'}">По дате рождения (от старых к молодым)</option>
+            </select>
+        </div>
+    </form>
+
+    <div class="mb-6 flex justify-end">
+        <a href="/api/admin/directors/add" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Добавить режиссера
+        </a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('filterForm');
+            const sortSelect = document.getElementById('sort');
+            const searchInput = document.getElementById('search');
+
+            function submitForm() {
+                form.submit();
+            }
+
+            sortSelect.addEventListener('change', submitForm);
+
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(submitForm, 500);
+            });
+        });
+
+        function deleteDirector(event, button) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!confirm('Вы уверены, что хотите удалить этого режиссера?')) {
+                return;
+            }
+
+            const directorId = button.getAttribute('data-director-id');
+            const token = localStorage.getItem('accessToken') || getCookie('x_api_token');
+
+            fetch(`/api/admin/directors/${directorId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : ''
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Не удалось удалить режиссера');
+                    });
+                }
+                return response;
+            })
+            .then(() => {
+                const card = button.closest('div.bg-white.rounded-lg.shadow');
+                if (card) {
+                    card.remove();
+                }
+
+                const grid = document.querySelector('.grid');
+                if (grid) {
+                    const cards = grid.querySelectorAll('div.bg-white.rounded-lg.shadow');
+
+                    if (cards.length === 0) {
+                        const emptyMessage = document.createElement('div');
+                        emptyMessage.className = 'col-span-full text-center py-8 text-gray-500';
+                        emptyMessage.textContent = 'Режиссеров пока нет.';
+
+                        grid.innerHTML = '';
+                        grid.appendChild(emptyMessage);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                alert(error.message || 'Не удалось удалить режиссера');
+            });
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+    </script>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div th:each="director : ${directors}" class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="relative">
+                <img th:src="${director.photo?.filename != null ? '/api/image/get/' + director.photo.filename : 'https://via.placeholder.com/300x400'}"
+                     th:alt="${director.fullName}"
+                     class="w-full h-64 object-cover cursor-default">
+            </div>
+            <div class="p-4">
+                <h3 class="text-lg font-semibold text-gray-800" th:text="${director.fullName}">
+                    Имя режиссера
+                </h3>
+                <p class="text-sm text-gray-500" th:text="${director.birthDate != null ? #temporals.format(director.birthDate, 'dd.MM.yyyy') : 'Дата рождения не указана'}">
+                    Дата рождения
+                </p>
+
+                <div class="mt-4">
+                    <a th:href="@{/api/admin/directors/edit/{id}(id=${director.id})}"
+                       class="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Редактировать
+                    </a>
+                </div>
+
+                <div class="mt-2">
+                    <button th:attr="data-director-id=${director.id}"
+                            onclick="deleteDirector(event, this)"
+                            class="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(directors)}" class="col-span-full text-center py-8 text-gray-500">
+            Нет доступных режиссеров.
+        </div>
+    </div>
+</main>
+
+</body>
+</html>
