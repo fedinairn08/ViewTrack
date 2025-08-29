@@ -424,14 +424,30 @@
     if (toggleReviewBtn) {
         toggleReviewBtn.addEventListener('click', function() {
             const container = document.getElementById('reviewFormContainer');
+            const noReviewsMessage = document.querySelector('.text-gray-500.italic');
+            
             container.classList.toggle('hidden');
+            
+            // Скрываем сообщение "Отзывов пока нет" когда показывается форма
+            if (!container.classList.contains('hidden') && noReviewsMessage) {
+                noReviewsMessage.style.display = 'none';
+            } else if (container.classList.contains('hidden') && noReviewsMessage) {
+                noReviewsMessage.style.display = '';
+            }
         });
     }
 
     const cancelReviewBtn = document.getElementById('cancelReviewBtn');
     if (cancelReviewBtn) {
         cancelReviewBtn.addEventListener('click', function() {
-            document.getElementById('reviewFormContainer').classList.add('hidden');
+            const container = document.getElementById('reviewFormContainer');
+            const noReviewsMessage = document.querySelector('.text-gray-500.italic');
+            
+            container.classList.add('hidden');
+
+            if (noReviewsMessage) {
+                noReviewsMessage.style.display = '';
+            }
         });
     }
 
