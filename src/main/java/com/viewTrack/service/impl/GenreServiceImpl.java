@@ -1,5 +1,6 @@
 package com.viewTrack.service.impl;
 
+import com.viewTrack.data.entity.AbstractEntity;
 import com.viewTrack.data.entity.Genre;
 import com.viewTrack.data.entity.Movie;
 import com.viewTrack.data.repository.GenreRepository;
@@ -9,6 +10,7 @@ import jakarta.persistence.EntityExistsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -45,6 +47,36 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public List<Genre> findAll() {
         return genreRepository.findAll();
+    }
+
+    @Override
+    public List<Genre> getGenres(String sort, String search) {
+        List<Genre> genres = genreRepository.findAll();
+
+        if (search != null && !search.trim().isEmpty()) {
+            String searchTerm = search.trim().toLowerCase();
+            genres = genres.stream()
+                    .filter(genre -> genre.getGenreName().toLowerCase().contains(searchTerm))
+                    .toList();
+        }
+
+        if (sort != null && !sort.trim().isEmpty()) {
+            if (sort.equals("name")) {
+                genres = genres.stream()
+                        .sorted((g1, g2) -> g1.getGenreName().compareToIgnoreCase(g2.getGenreName()))
+                        .toList();
+            } else {
+                genres = genres.stream()
+                        .sorted(Comparator.comparing(AbstractEntity::getId))
+                        .toList();
+            }
+        } else {
+            genres = genres.stream()
+                    .sorted(Comparator.comparing(AbstractEntity::getId))
+                    .toList();
+        }
+        
+        return genres;
     }
 
     @Override

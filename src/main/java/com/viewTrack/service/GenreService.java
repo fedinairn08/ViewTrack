@@ -11,5 +11,7 @@ public interface GenreService {
 
     List<Genre> findAll();
 
+    List<Genre> getGenres(String sort, String search);
+
     boolean existsByGenreName(String genreName);
 }

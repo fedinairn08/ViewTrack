@@ -91,14 +91,18 @@ public class AdminController {
     }
 
     @GetMapping("/genres")
-    public String adminGenresPage(Model model) {
+    public String adminGenresPage(@RequestParam(required = false) String sort,
+                                   @RequestParam(required = false) String search,
+                                   Model model) {
         User currentUser = authUtils.getUserEntity();
-        List<Genre> genres = genreService.findAll();
+        List<Genre> genres = genreService.getGenres(sort, search);
 
         model.addAttribute("genres", genres);
         model.addAttribute("user", currentUser);
         model.addAttribute("title", "Управление жанрами");
         model.addAttribute("active", "genres");
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("searchTerm", search);
 
         return "admin/genres";
     }
