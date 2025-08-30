@@ -149,7 +149,6 @@ public class DirectorServiceImpl implements DirectorService {
         }
 
         if ("true".equals(deletePhoto)) {
-            // Удаляем фотографию
             if (director.getPhoto() != null) {
                 Image oldImage = director.getPhoto();
                 imageService.delete(oldImage.getFilename());

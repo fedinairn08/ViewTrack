@@ -54,7 +54,7 @@ public class AdminController {
         List<Movie> movies = movieService.getMovies(sort, genre, year, search, director);
         model.addAttribute("movies", movies);
         model.addAttribute("searchTerm", search);
-        model.addAttribute("title", "Фильмы");
+        model.addAttribute("title", "Управление фильмами");
 
         return "admin/movies";
     }
@@ -154,5 +154,16 @@ public class AdminController {
         model.addAttribute("title", "Редактировать режиссера");
 
         return "admin/edit-director";
+    }
+
+    @GetMapping("/profile")
+    public String adminProfilePage(Model model) {
+        User currentUser = authUtils.getUserEntity();
+
+        model.addAttribute("user", currentUser);
+        model.addAttribute("title", "Профиль администратора");
+        model.addAttribute("active", "profile");
+
+        return "admin/profile";
     }
 }

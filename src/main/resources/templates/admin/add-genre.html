@@ -29,14 +29,14 @@
             </a>
         </nav>
 
-        <a href="/api/user/profile" class="flex-shrink-0">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                <img th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/40'}"
-                     th:alt="${user.name + ' ' + user.surname}"
-                     class="w-full h-full object-cover"
-                     onerror="this.src='https://via.placeholder.com/40'"/>
-            </div>
-        </a>
+            <a href="/api/admin/profile" class="flex-shrink-0">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+        <img th:src="${user.profileImage?.filename != null ? '/api/image/get/' + user.profileImage.filename : 'https://via.placeholder.com/40'}"
+             th:alt="${user.name + ' ' + user.surname}"
+             class="w-full h-full object-cover"
+             onerror="this.src='https://via.placeholder.com/40'"/>
+      </div>
+    </a>
     </div>
 </header>
 
