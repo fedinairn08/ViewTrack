@@ -157,4 +157,20 @@ public class MovieController {
 
         return "movie-detail";
     }
+
+    @GetMapping("/directors")
+    public String directorsPage(@RequestParam(required = false) String sort,
+                               @RequestParam(required = false) String search,
+                               Model model) {
+        User currentUser = authUtils.getUserEntity();
+        List<Director> directors = directorService.getDirectors(sort, search);
+
+        model.addAttribute("directors", directors);
+        model.addAttribute("user", currentUser);
+        model.addAttribute("active", "directors");
+        model.addAttribute("currentSort", sort);
+        model.addAttribute("searchTerm", search);
+
+        return "directors";
+    }
 }
