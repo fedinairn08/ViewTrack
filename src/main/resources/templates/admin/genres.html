@@ -40,7 +40,7 @@
     </div>
 </header>
 
-<main class="max-w-4xl mx-auto px-4 py-8">
+<main class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Управление жанрами</h1>
         <a href="/api/admin/genres/add" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors">
@@ -72,45 +72,27 @@
         <div class="flex flex-col">
             <label for="sort" class="text-sm font-medium text-gray-700 mb-1">Сортировка</label>
             <select id="sort" name="sort" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option value="" th:selected="${currentSort == null}">По умолчанию</option>
-                <option value="name" th:selected="${currentSort == 'name'}">По названию (А-Я)</option>
+                <option value="name" th:selected="${currentSort == 'name' || currentSort == null}">По названию (А-Я)</option>
+                <option value="name-desc" th:selected="${currentSort == 'name-desc'}">По названию (Я-А)</option>
             </select>
         </div>
     </form>
 
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-            <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Название
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Действия
-                </th>
-            </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-            <tr th:each="genre : ${genres}" class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="text-sm font-medium text-gray-900" th:text="${genre.genreName}">Жанр</span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button th:attr="data-genre-id=${genre.id}"
-                            onclick="deleteGenre(event, this)"
-                            class="text-red-600 hover:text-red-900">
-                        Удалить
-                    </button>
-                </td>
-            </tr>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div th:each="genre : ${genres}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800 truncate flex-1 mr-2" th:text="${genre.genreName}">Жанр</h3>
+                <button th:attr="data-genre-id=${genre.id}"
+                        onclick="deleteGenre(event, this)"
+                        class="text-red-600 hover:text-red-900 font-medium text-sm flex-shrink-0">
+                    Удалить
+                </button>
+            </div>
+        </div>
 
-            <tr th:if="${#lists.isEmpty(genres)}">
-                <td colspan="2" class="px-6 py-4 text-center text-gray-500">
-                    Жанров пока нет.
-                </td>
-            </tr>
-            </tbody>
-        </table>
+        <div th:if="${#lists.isEmpty(genres)}" class="col-span-full text-center py-8 text-gray-500">
+            Жанров пока нет.
+        </div>
     </div>
 </main>
 
@@ -154,20 +136,23 @@
                     return response;
                 })
                 .then(() => {
-                    const row = button.closest('tr');
-                    if (row) {
-                        row.remove();
+                    const card = button.closest('div.bg-white.rounded-lg.shadow');
+                    if (card) {
+                        card.remove();
                     }
 
-                    const tbody = document.querySelector('tbody');
-                    if (tbody && tbody.children.length === 0) {
-                        const emptyRow = document.createElement('tr');
-                        emptyRow.innerHTML = `
-                        <td colspan="2" class="px-6 py-4 text-center text-gray-500">
-                            Жанров пока нет.
-                        </td>
-                    `;
-                        tbody.appendChild(emptyRow);
+                    const grid = document.querySelector('.grid');
+                    if (grid) {
+                        const cards = grid.querySelectorAll('div.bg-white.rounded-lg.shadow');
+
+                        if (cards.length === 0) {
+                            const emptyMessage = document.createElement('div');
+                            emptyMessage.className = 'col-span-full text-center py-8 text-gray-500';
+                            emptyMessage.textContent = 'Жанров пока нет.';
+
+                            grid.innerHTML = '';
+                            grid.appendChild(emptyMessage);
+                        }
                     }
                 })
                 .catch(error => {
