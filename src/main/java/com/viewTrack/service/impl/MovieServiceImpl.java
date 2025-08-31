@@ -231,4 +231,9 @@ public class MovieServiceImpl implements MovieService {
 
         movie.setPoster(savedImage);
     }
+
+    @Override
+    public List<Movie> getMoviesByDirector(Long directorId) {
+        return movieRepository.findByDirectorsId(directorId);
+    }
 }

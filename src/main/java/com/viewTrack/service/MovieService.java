@@ -20,4 +20,6 @@ public interface MovieService {
                       List<Long> directorIds, MultipartFile poster, String deletePoster);
 
     void deleteMovie(Long id);
+    
+    List<Movie> getMoviesByDirector(Long directorId);
 }

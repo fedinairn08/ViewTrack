@@ -2,6 +2,7 @@ package com.viewTrack.controller;
 
 import com.viewTrack.data.entity.*;
 import com.viewTrack.data.repository.ReviewRepository;
+import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.service.DirectorService;
 import com.viewTrack.service.GenreService;
 import com.viewTrack.service.MovieService;
@@ -172,5 +173,23 @@ public class MovieController {
         model.addAttribute("searchTerm", search);
 
         return "directors";
+    }
+
+    @GetMapping("/director/{id}")
+    public String directorDetailPage(@PathVariable Long id, Model model) {
+        User currentUser = authUtils.getUserEntity();
+        Director director = directorService.getDirectorById(id);
+        
+        if (director == null) {
+            throw new ResourceNotFoundException("Режиссер не найден");
+        }
+
+        List<Movie> movies = movieService.getMoviesByDirector(id);
+
+        model.addAttribute("director", director);
+        model.addAttribute("movies", movies);
+        model.addAttribute("user", currentUser);
+
+        return "director-detail";
     }
 }
