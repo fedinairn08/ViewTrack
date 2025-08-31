@@ -106,9 +106,33 @@
 
                         <button th:if="${userRating != null}"
                                 id="ratedMovieButton"
+                                onclick="toggleActionDropdown()"
                                 class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors w-full sm:w-auto">
                             Оценено: <span th:text="${userRating}"></span>/10 ★ <span class="text-sm opacity-75">(Изменить)</span>
                         </button>
+
+                        <div id="actionDropdown" class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg hidden">
+                            <div class="py-1">
+                                <div class="px-4 py-2 hover:bg-blue-50 cursor-pointer text-blue-600 hover:text-blue-800"
+                                     onclick="showRatingDropdown()">
+                                    <span class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        Изменить оценку
+                                    </span>
+                                </div>
+                                <div class="px-4 py-2 hover:bg-red-50 cursor-pointer text-red-600 hover:text-red-800"
+                                     onclick="removeRating()">
+                                    <span class="flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        Удалить оценку
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="ratingDropdown" class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg hidden">
                             <div class="py-1">
@@ -290,31 +314,15 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const rateMovieButton = document.getElementById('rateMovieButton');
-        const ratedMovieButton = document.getElementById('ratedMovieButton');
+        const actionDropdown = document.getElementById('actionDropdown');
         const ratingDropdown = document.getElementById('ratingDropdown');
-
-        if (rateMovieButton) {
-            rateMovieButton.addEventListener('click', function() {
-                ratingDropdown.classList.toggle('hidden');
-            });
+        
+        if (actionDropdown) {
+            actionDropdown.classList.add('hidden');
         }
-
-        if (ratedMovieButton) {
-            ratedMovieButton.addEventListener('click', function() {
-                ratingDropdown.classList.toggle('hidden');
-            });
+        if (ratingDropdown) {
+            ratingDropdown.classList.add('hidden');
         }
-
-        document.addEventListener('click', function(event) {
-            const isRateButton = rateMovieButton && rateMovieButton.contains(event.target);
-            const isRatedButton = ratedMovieButton && ratedMovieButton.contains(event.target);
-            const isDropdown = ratingDropdown && ratingDropdown.contains(event.target);
-
-            if (!isRateButton && !isRatedButton && !isDropdown) {
-                if (ratingDropdown) ratingDropdown.classList.add('hidden');
-            }
-        });
 
         const editReviewButtons = document.querySelectorAll('.edit-review-btn');
         editReviewButtons.forEach(button => {
@@ -449,8 +457,7 @@
             const noReviewsMessage = document.querySelector('.text-gray-500.italic');
             
             container.classList.toggle('hidden');
-            
-            // Скрываем сообщение "Отзывов пока нет" когда показывается форма
+
             if (!container.classList.contains('hidden') && noReviewsMessage) {
                 noReviewsMessage.style.display = 'none';
             } else if (container.classList.contains('hidden') && noReviewsMessage) {
@@ -537,7 +544,11 @@
         })
         .then(data => {
             updateRatingButton(score);
-            document.getElementById('ratingDropdown').classList.add('hidden');
+
+            const ratingDropdown = document.getElementById('ratingDropdown');
+            if (ratingDropdown) {
+                ratingDropdown.classList.add('hidden');
+            }
 
             const leaveReviewButtonContainer = document.getElementById('leaveReviewButtonContainer');
             if (leaveReviewButtonContainer) {
@@ -596,10 +607,17 @@
             rateMovieButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
             rateMovieButton.classList.add('bg-green-600', 'hover:bg-green-700');
             rateMovieButton.id = 'ratedMovieButton';
+            rateMovieButton.onclick = toggleActionDropdown;
         }
 
         if (ratedMovieButton) {
             ratedMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
+            ratedMovieButton.onclick = toggleActionDropdown;
+        }
+
+        const ratingDropdown = document.getElementById('ratingDropdown');
+        if (ratingDropdown) {
+            ratingDropdown.classList.add('hidden');
         }
     }
 
@@ -676,6 +694,131 @@
                 console.error('Ошибка:', error);
                 alert(error.message || 'Не удалось отметить фильм как просмотренный');
             });
+    }
+
+    function toggleActionDropdown() {
+        const actionDropdown = document.getElementById('actionDropdown');
+        const ratingDropdown = document.getElementById('ratingDropdown');
+        
+        if (actionDropdown) {
+            if (ratingDropdown) {
+                ratingDropdown.classList.add('hidden');
+            }
+
+            actionDropdown.classList.toggle('hidden');
+
+            if (!actionDropdown.classList.contains('hidden')) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeActionDropdownOnOutsideClick);
+                }, 0);
+            }
+        }
+    }
+
+    function closeActionDropdownOnOutsideClick(event) {
+        const actionDropdown = document.getElementById('actionDropdown');
+        const ratedButton = document.getElementById('ratedMovieButton');
+        
+        if (actionDropdown && !actionDropdown.contains(event.target) && !ratedButton.contains(event.target)) {
+            actionDropdown.classList.add('hidden');
+            document.removeEventListener('click', closeActionDropdownOnOutsideClick);
+        }
+    }
+
+    function showRatingDropdown() {
+        const actionDropdown = document.getElementById('actionDropdown');
+        const ratingDropdown = document.getElementById('ratingDropdown');
+        
+        if (actionDropdown) {
+            actionDropdown.classList.add('hidden');
+        }
+        
+        if (ratingDropdown) {
+            ratingDropdown.classList.remove('hidden');
+
+            setTimeout(() => {
+                document.addEventListener('click', closeRatingDropdownOnOutsideClick);
+            }, 0);
+        }
+    }
+
+    function closeRatingDropdownOnOutsideClick(event) {
+        const ratingDropdown = document.getElementById('ratingDropdown');
+        const ratedButton = document.getElementById('ratedMovieButton');
+        
+        if (ratingDropdown && !ratingDropdown.contains(event.target) && !ratedButton.contains(event.target)) {
+            ratingDropdown.classList.add('hidden');
+            document.removeEventListener('click', closeRatingDropdownOnOutsideClick);
+        }
+    }
+
+    function removeRating() {
+        const movieId = [[${movie.id}]];
+
+        if (!movieId) {
+            alert('Не удалось получить ID фильма');
+            return;
+        }
+
+        if (!confirm('Вы уверены, что хотите убрать оценку фильма?')) {
+            return;
+        }
+
+        fetch('/api/user/remove-rating', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ movieId: movieId })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Ошибка при удалении оценки');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            const rateMovieContainer = document.getElementById('rateMovieContainer');
+            rateMovieContainer.innerHTML = `
+                <button id="rateMovieButton"
+                        class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors w-full sm:w-auto">
+                    Оценить фильм
+                </button>
+            `;
+
+            const actionDropdown = document.getElementById('actionDropdown');
+            const ratingDropdown = document.getElementById('ratingDropdown');
+            if (actionDropdown) actionDropdown.classList.add('hidden');
+            if (ratingDropdown) ratingDropdown.classList.add('hidden');
+
+            const leaveReviewButtonContainer = document.getElementById('leaveReviewButtonContainer');
+            if (leaveReviewButtonContainer) {
+                leaveReviewButtonContainer.classList.add('hidden');
+            }
+
+            updateAverageRating(data.averageRating, data.ratingsCount);
+
+            const userReviewElement = document.querySelector(`[data-review-id="${data.reviewId}"]`);
+            if (userReviewElement) {
+                userReviewElement.remove();
+            }
+
+            const reviewsContainer = document.querySelector('.space-y-4');
+            if (reviewsContainer && reviewsContainer.children.length === 0) {
+                reviewsContainer.innerHTML = `
+                    <div class="text-gray-500 italic">
+                        Отзывов пока нет.
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert(error.message || 'Не удалось убрать оценку. Пожалуйста, попробуйте позже.');
+        });
     }
 </script>
 
