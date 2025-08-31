@@ -760,10 +760,6 @@
             return;
         }
 
-        if (!confirm('Вы уверены, что хотите убрать оценку фильма?')) {
-            return;
-        }
-
         fetch('/api/user/remove-rating', {
             method: 'DELETE',
             headers: {
@@ -801,9 +797,16 @@
 
             updateAverageRating(data.averageRating, data.ratingsCount);
 
-            const userReviewElement = document.querySelector(`[data-review-id="${data.reviewId}"]`);
-            if (userReviewElement) {
-                userReviewElement.remove();
+            if (data.reviewId) {
+                const userReviewElement = document.querySelector(`[data-review-id="${data.reviewId}"]`);
+                if (userReviewElement) {
+                    userReviewElement.remove();
+                }
+            } else {
+                const userReviewElements = document.querySelectorAll('.bg-white.p-4.rounded-lg.shadow');
+                userReviewElements.forEach(element => {
+                    element.remove();
+                });
             }
 
             const reviewsContainer = document.querySelector('.space-y-4');

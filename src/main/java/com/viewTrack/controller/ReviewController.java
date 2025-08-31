@@ -78,4 +78,21 @@ public class ReviewController {
         Review updatedReview = reviewService.deleteReview(currentUser.getId(), reviewId);
         return ResponseEntity.ok(updatedReview);
     }
+
+    @DeleteMapping("/remove-rating")
+    public ResponseEntity<Map<String, Object>> removeRating(@RequestBody RateMovieRequest request) {
+        reviewService.removeRating(request.getMovieId());
+
+        Movie movie = movieRepository.findById(request.getMovieId())
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
+
+        Long ratingsCount = reviewRepository.countByMovie(movie);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("reviewId", null);
+        response.put("averageRating", movie.getAverageRating());
+        response.put("ratingsCount", ratingsCount);
+
+        return ResponseEntity.ok(response);
+    }
 }

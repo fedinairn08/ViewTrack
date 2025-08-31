@@ -10,4 +10,6 @@ public interface ReviewService {
     Review updateReview(Long userId, Long reviewId, String content);
 
     Review deleteReview(Long userId, Long reviewId);
+
+    Review removeRating(Long movieId);
 }

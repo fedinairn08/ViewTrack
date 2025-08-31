@@ -117,4 +117,21 @@ public class ReviewServiceImpl implements ReviewService {
 
         return reviewRepository.save(review);
     }
+
+    @Override
+    public Review removeRating(Long movieId) {
+        User currentUser = userService.getById(authUtils.getUserEntity().getId());
+
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
+
+        Review review = reviewRepository.findByUserAndMovie(currentUser, movie)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found"));
+
+        reviewRepository.delete(review);
+
+        updateMovieAverageRating(movie);
+
+        return null;
+    }
 }
