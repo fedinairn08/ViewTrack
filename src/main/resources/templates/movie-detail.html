@@ -164,31 +164,33 @@
 
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Режиссеры</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    <div th:each="director : ${movie.directors}" class="bg-white rounded-lg shadow overflow-hidden">
-                        <div class="w-full h-32">
-                            <img th:if="${director.photo != null}" 
-                                 th:src="'/api/image/get/' + ${director.photo.filename}"
-                                 th:alt="${director.fullName}"
-                                 class="w-full h-full object-cover">
-                            <div th:if="${director.photo == null}" 
-                                 class="w-full h-full bg-gray-200 flex items-center justify-center">
-                                <div class="text-center">
-                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                    <p class="mt-1 text-sm text-gray-500">Фото отсутствует</p>
+                    <div th:each="director : ${movie.directors}" class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
+                        <a th:href="@{'/api/movie/director/' + ${director.id}}" class="block">
+                            <div class="w-full h-32">
+                                <img th:if="${director.photo != null}" 
+                                     th:src="'/api/image/get/' + ${director.photo.filename}"
+                                     th:alt="${director.fullName}"
+                                     class="w-full h-full object-cover">
+                                <div th:if="${director.photo == null}" 
+                                     class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                    <div class="text-center">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                        <p class="mt-1 text-sm text-gray-500">Фото отсутствует</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="p-4">
-                            <h4 th:text="${director.fullName}" class="font-semibold text-lg text-gray-800 mb-2"></h4>
-                            <p th:if="${director.deathDate == null}"
-                               th:text="|Родился: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')}|"
-                               class="text-sm text-gray-600"></p>
-                            <p th:if="${director.deathDate != null}"
-                               th:text="|Жил: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')} - ${#temporals.format(director.deathDate, 'dd.MM.yyyy')}|"
-                               class="text-sm text-gray-600"></p>
-                        </div>
+                            <div class="p-4">
+                                <h4 th:text="${director.fullName}" class="font-semibold text-lg text-gray-800 mb-2"></h4>
+                                <p th:if="${director.deathDate == null}"
+                                   th:text="|Родился: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')}|"
+                                   class="text-sm text-gray-600"></p>
+                                <p th:if="${director.deathDate != null}"
+                                   th:text="|Жил: ${#temporals.format(director.birthDate, 'dd.MM.yyyy')} - ${#temporals.format(director.deathDate, 'dd.MM.yyyy')}|"
+                                   class="text-sm text-gray-600"></p>
+                            </div>
+                        </a>
                     </div>
                 </div>
 

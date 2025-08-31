@@ -25,4 +25,6 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     Optional<Movie> findByIdWithDetails(Long id);
     
     List<Movie> findByDirectorsId(Long directorId);
+    
+    List<Movie> findByDirectorsIdOrderByReleaseDateDesc(Long directorId);
 }

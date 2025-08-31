@@ -236,4 +236,9 @@ public class MovieServiceImpl implements MovieService {
     public List<Movie> getMoviesByDirector(Long directorId) {
         return movieRepository.findByDirectorsId(directorId);
     }
+
+    @Override
+    public List<Movie> getMoviesByDirectorOrdered(Long directorId) {
+        return movieRepository.findByDirectorsIdOrderByReleaseDateDesc(directorId);
+    }
 }

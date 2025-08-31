@@ -22,4 +22,6 @@ public interface MovieService {
     void deleteMovie(Long id);
     
     List<Movie> getMoviesByDirector(Long directorId);
+    
+    List<Movie> getMoviesByDirectorOrdered(Long directorId);
 }

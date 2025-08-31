@@ -184,7 +184,7 @@ public class MovieController {
             throw new ResourceNotFoundException("Режиссер не найден");
         }
 
-        List<Movie> movies = movieService.getMoviesByDirector(id);
+        List<Movie> movies = movieService.getMoviesByDirectorOrdered(id);
 
         model.addAttribute("director", director);
         model.addAttribute("movies", movies);
