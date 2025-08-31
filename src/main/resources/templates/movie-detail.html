@@ -188,10 +188,10 @@
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h2 class="text-xl font-semibold text-gray-900 mb-2">Средний рейтинг фильма</h2>
-                        <p class="text-sm text-gray-600">на основе <span th:text="${ratingsCount}">0</span> оценок</p>
+                        <p class="text-sm text-gray-600">на основе <span id="ratingsCount" th:text="${ratingsCount}">0</span> оценок</p>
                     </div>
                     <div class="text-right">
-                        <span class="text-3xl font-bold text-yellow-500"
+                        <span id="averageRating" class="text-3xl font-bold text-yellow-500"
                               th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)}">
                             0.0
                         </span>
@@ -322,6 +322,27 @@
         }
         if (ratingDropdown) {
             ratingDropdown.classList.add('hidden');
+        }
+
+        const rateMovieButton = document.getElementById('rateMovieButton');
+        if (rateMovieButton) {
+            console.log('Found rateMovieButton in DOMContentLoaded, adding event listener');
+            rateMovieButton.addEventListener('click', function() {
+                console.log('Rate movie button clicked from DOMContentLoaded!');
+                const ratingDropdown = document.getElementById('ratingDropdown');
+                if (ratingDropdown) {
+                    ratingDropdown.classList.remove('hidden');
+                    console.log('Rating dropdown shown from DOMContentLoaded');
+
+                    setTimeout(() => {
+                        document.addEventListener('click', closeRatingDropdownOnOutsideClick);
+                    }, 0);
+                } else {
+                    console.error('Rating dropdown not found in DOMContentLoaded!');
+                }
+            });
+        } else {
+            console.log('rateMovieButton not found in DOMContentLoaded');
         }
 
         const editReviewButtons = document.querySelectorAll('.edit-review-btn');
@@ -586,8 +607,8 @@
     }
 
     function updateAverageRating(averageRating, ratingsCount) {
-        const averageRatingElement = document.querySelector('.text-3xl.font-bold.text-yellow-500');
-        const ratingsCountElement = document.querySelector('.text-sm.text-gray-600 > span');
+        const averageRatingElement = document.getElementById('averageRating');
+        const ratingsCountElement = document.getElementById('ratingsCount');
 
         if (averageRatingElement) {
             averageRatingElement.textContent = averageRating.toFixed(1);
@@ -619,6 +640,8 @@
         if (ratingDropdown) {
             ratingDropdown.classList.add('hidden');
         }
+
+        console.log('Rating button updated to:', score);
     }
 
     function addToWatchlist(button) {
@@ -726,19 +749,27 @@
     }
 
     function showRatingDropdown() {
+        console.log('showRatingDropdown function called!');
         const actionDropdown = document.getElementById('actionDropdown');
         const ratingDropdown = document.getElementById('ratingDropdown');
         
+        console.log('actionDropdown:', actionDropdown);
+        console.log('ratingDropdown:', ratingDropdown);
+        
         if (actionDropdown) {
             actionDropdown.classList.add('hidden');
+            console.log('Action dropdown hidden');
         }
         
         if (ratingDropdown) {
             ratingDropdown.classList.remove('hidden');
+            console.log('Rating dropdown shown');
 
             setTimeout(() => {
                 document.addEventListener('click', closeRatingDropdownOnOutsideClick);
             }, 0);
+        } else {
+            console.error('Rating dropdown not found in showRatingDropdown!');
         }
     }
 
@@ -784,6 +815,30 @@
                     Оценить фильм
                 </button>
             `;
+
+            const newRateMovieButton = document.getElementById('rateMovieButton');
+            if (newRateMovieButton) {
+                newRateMovieButton.replaceWith(newRateMovieButton.cloneNode(true));
+                const freshButton = document.getElementById('rateMovieButton');
+                
+                freshButton.addEventListener('click', function() {
+                    console.log('Rate movie button clicked!');
+                    const ratingDropdown = document.getElementById('ratingDropdown');
+                    if (ratingDropdown) {
+                        ratingDropdown.classList.remove('hidden');
+                        console.log('Rating dropdown shown');
+
+                        setTimeout(() => {
+                            document.addEventListener('click', closeRatingDropdownOnOutsideClick);
+                        }, 0);
+                    } else {
+                        console.error('Rating dropdown not found!');
+                    }
+                });
+                console.log('Event listener added to rate movie button');
+            } else {
+                console.error('Rate movie button not found after creation!');
+            }
 
             const actionDropdown = document.getElementById('actionDropdown');
             const ratingDropdown = document.getElementById('ratingDropdown');

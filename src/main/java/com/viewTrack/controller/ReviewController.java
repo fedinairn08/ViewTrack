@@ -38,7 +38,7 @@ public class ReviewController {
         Movie movie = movieRepository.findById(request.getMovieId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
 
-        Long ratingsCount = reviewRepository.countByMovie(movie);
+        Long ratingsCount = reviewRepository.countByMovieAndRatingGreaterThan(movie, 0);
 
         Map<String, Object> response = new HashMap<>();
         response.put("reviewId", review.getId());
@@ -86,7 +86,7 @@ public class ReviewController {
         Movie movie = movieRepository.findById(request.getMovieId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
 
-        Long ratingsCount = reviewRepository.countByMovie(movie);
+        Long ratingsCount = reviewRepository.countByMovieAndRatingGreaterThan(movie, 0);
 
         Map<String, Object> response = new HashMap<>();
         response.put("reviewId", null);

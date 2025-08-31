@@ -57,10 +57,14 @@ public class ReviewServiceImpl implements ReviewService {
     private void updateMovieAverageRating(Movie movie) {
         List<Review> reviews = reviewRepository.findByMovieId(movie.getId());
 
-        if (reviews.isEmpty()) {
+        List<Review> reviewsWithRating = reviews.stream()
+                .filter(review -> review.getRating() > 0)
+                .toList();
+
+        if (reviewsWithRating.isEmpty()) {
             movie.setAverageRating(0.0f);
         } else {
-            double average = reviews.stream()
+            double average = reviewsWithRating.stream()
                     .mapToInt(Review::getRating)
                     .average()
                     .orElse(0.0);
