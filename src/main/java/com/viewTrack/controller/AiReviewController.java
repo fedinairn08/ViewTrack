@@ -1,0 +1,33 @@
+package com.viewTrack.controller;
+
+import com.viewTrack.dto.BasicApiResponse;
+import com.viewTrack.service.AiReviewService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@Slf4j
+@RestController
+@RequestMapping("/api/ai-reviews")
+@RequiredArgsConstructor
+public class AiReviewController {
+
+    private final AiReviewService aiReviewService;
+
+    @PostMapping("/generate/{movieId}")
+    public ResponseEntity<BasicApiResponse<String>> generateReview(@PathVariable Long movieId) {
+        try {
+            String review = aiReviewService.generateReviewForMovie(movieId);
+            
+            return ResponseEntity.ok(new BasicApiResponse<>(review));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body(new BasicApiResponse<>(true, "Ошибка при генерации рецензии"));
+        }
+    }
+}

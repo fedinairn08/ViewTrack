@@ -30,3 +30,6 @@ s3:
   accessKey: ${MINIO_ACCESS_KEY}
   secretKey: ${MINIO_SECRET_KEY}
   bucket: view-track
+
+gigachat:
+  secret: ${GIGACHAT_CLIENT_SECRET}

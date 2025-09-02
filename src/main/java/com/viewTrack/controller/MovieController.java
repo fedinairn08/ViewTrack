@@ -145,7 +145,7 @@ public class MovieController {
 
         inToWatchList = userMovieService.isInToWatchList(movie.getId());
         inWatched = userMovieService.isInWatchedList(movie.getId());
-
+        
         model.addAttribute("movie", movie);
         model.addAttribute("userRating", userRating);
         model.addAttribute("userReviewContent", userReviewContent);
