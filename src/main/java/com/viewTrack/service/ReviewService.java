@@ -12,4 +12,6 @@ public interface ReviewService {
     Review deleteReview(Long userId, Long reviewId);
 
     Review removeRating(Long movieId);
+
+    void notifyReviewChanged(Long movieId);
 }

@@ -1,6 +1,10 @@
 package com.viewTrack.service;
 
-public interface AiReviewService {
+import com.viewTrack.data.entity.AiReview;
 
-    String generateReviewForMovie(Long movieId);
+public interface AiReviewService {
+    
+    AiReview getOrGenerateReviewForMovie(Long movieId);
+    
+    void regenerateReviewForMovie(Long movieId);
 }

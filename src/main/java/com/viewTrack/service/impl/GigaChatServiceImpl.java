@@ -52,8 +52,9 @@ public class GigaChatServiceImpl implements GigaChatService {
 
     private String buildReviewPrompt(Movie movie, List<Review> reviews) {
         StringBuilder prompt = new StringBuilder();
-        prompt.append("Ты - профессиональный кинокритик. Напиши краткую рецензию на фильм на основе отзывов зрителей. ");
-        prompt.append("Важно: НЕ раскрывай сюжет и спойлеры! Фокусируйся на общих впечатлениях, атмосфере, актерской игре, режиссуре.\n\n");
+        prompt.append("Ты - профессиональный кинокритик. Напиши краткую рецензию на фильм на основе отзывов зрителей.");
+        prompt.append("Важно: НЕ раскрывай сюжет и спойлеры! Фокусируйся на общих впечатлениях, атмосфере, актерской игре, режиссуре.");
+        prompt.append("Учитывай как положительные, так и отрицательные отзывы. Пиши рецензию только на основе отзывов зрителей, не придумывай ничего сам.\n\n");
         
         prompt.append("Информация о фильме:\n");
         prompt.append("- Название: ").append(movie.getTitle()).append("\n");

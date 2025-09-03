@@ -8,16 +8,19 @@ import com.viewTrack.data.repository.ReviewRepository;
 import com.viewTrack.data.repository.UserRepository;
 import com.viewTrack.exeption.AccessDeniedException;
 import com.viewTrack.exeption.ResourceNotFoundException;
+import com.viewTrack.service.AiReviewService;
 import com.viewTrack.service.ReviewService;
 import com.viewTrack.service.UserService;
 import com.viewTrack.utils.AuthUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
@@ -31,6 +34,8 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
 
     private final UserRepository userRepository;
+
+    private final AiReviewService aiReviewService;
 
     @Override
     public Review rateMovie(Long movieId, int rating) {
@@ -89,7 +94,11 @@ public class ReviewServiceImpl implements ReviewService {
         review.setContent(content);
         review.setUpdatedAt(LocalDateTime.now());
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        notifyReviewChanged(movieId);
+
+        return savedReview;
     }
 
     @Override
@@ -104,7 +113,11 @@ public class ReviewServiceImpl implements ReviewService {
         review.setContent(content);
         review.setUpdatedAt(LocalDateTime.now());
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        notifyReviewChanged(review.getMovie().getId());
+
+        return savedReview;
     }
 
     @Override
@@ -116,10 +129,15 @@ public class ReviewServiceImpl implements ReviewService {
             throw new AccessDeniedException("Вы не можете удалить этот отзыв");
         }
 
+        Long movieId = review.getMovie().getId();
         review.setContent(null);
         review.setUpdatedAt(LocalDateTime.now());
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        notifyReviewChanged(movieId);
+
+        return savedReview;
     }
 
     @Override
@@ -136,6 +154,17 @@ public class ReviewServiceImpl implements ReviewService {
 
         updateMovieAverageRating(movie);
 
+        notifyReviewChanged(movieId);
+
         return null;
+    }
+    
+    @Override
+    public void notifyReviewChanged(Long movieId) {
+        try {
+            aiReviewService.regenerateReviewForMovie(movieId);
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении AI-рецензии для фильма {}: {}", movieId, e.getMessage());
+        }
     }
 }

@@ -18,16 +18,16 @@ public class AiReviewController {
 
     private final AiReviewService aiReviewService;
 
-    @PostMapping("/generate/{movieId}")
-    public ResponseEntity<BasicApiResponse<String>> generateReview(@PathVariable Long movieId) {
+    @PostMapping("/regenerate/{movieId}")
+    public ResponseEntity<BasicApiResponse<String>> regenerateReview(@PathVariable Long movieId) {
         try {
-            String review = aiReviewService.generateReviewForMovie(movieId);
+            aiReviewService.regenerateReviewForMovie(movieId);
             
-            return ResponseEntity.ok(new BasicApiResponse<>(review));
+            return ResponseEntity.ok(new BasicApiResponse<>("Рецензия успешно перегенерирована"));
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
-                    .body(new BasicApiResponse<>(true, "Ошибка при генерации рецензии"));
+                    .body(new BasicApiResponse<>(true, "Ошибка при перегенерации рецензии"));
         }
     }
 }

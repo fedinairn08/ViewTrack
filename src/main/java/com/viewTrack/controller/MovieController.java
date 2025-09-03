@@ -3,10 +3,7 @@ package com.viewTrack.controller;
 import com.viewTrack.data.entity.*;
 import com.viewTrack.data.repository.ReviewRepository;
 import com.viewTrack.exeption.ResourceNotFoundException;
-import com.viewTrack.service.DirectorService;
-import com.viewTrack.service.GenreService;
-import com.viewTrack.service.MovieService;
-import com.viewTrack.service.UserMovieService;
+import com.viewTrack.service.*;
 import com.viewTrack.utils.AuthUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -35,6 +32,8 @@ public class MovieController {
     private final ReviewRepository reviewRepository;
 
     private final DirectorService directorService;
+    
+    private final AiReviewService aiReviewService;
 
     @GetMapping("/all")
     public String showAllMoviesForm(@RequestParam(required = false) String sort,
@@ -155,6 +154,9 @@ public class MovieController {
         model.addAttribute("title", movie.getTitle());
         model.addAttribute("movieReviews", movieReviews);
         model.addAttribute("ratingsCount", ratingsCount);
+
+        AiReview aiReview = aiReviewService.getOrGenerateReviewForMovie(id);
+        model.addAttribute("aiReview", aiReview);
 
         return "movie-detail";
     }

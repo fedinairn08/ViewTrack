@@ -28,7 +28,7 @@ public class Review extends AbstractEntity {
     @JoinColumn(name = "movie_id")
     private Movie movie;
 
-    @Column(name = "content")
+    @Column(name = "content", columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "rating", nullable = false)
