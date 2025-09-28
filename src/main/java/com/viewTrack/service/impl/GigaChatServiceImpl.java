@@ -77,7 +77,7 @@ public class GigaChatServiceImpl implements GigaChatService {
                     .append(review.getContent()).append("\n");
         }
         
-        prompt.append("\nНапиши рецензию объемом 150-200 слов, избегая спойлеров. ");
+        prompt.append("\nНапиши рецензию объемом 100 слов, избегая спойлеров. ");
         prompt.append("Используй информацию из отзывов для анализа качества фильма.");
         
         return prompt.toString();

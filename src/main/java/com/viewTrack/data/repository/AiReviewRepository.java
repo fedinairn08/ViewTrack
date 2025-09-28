@@ -13,3 +13,4 @@ public interface AiReviewRepository extends JpaRepository<AiReview, Long> {
     Optional<AiReview> findByMovie(Movie movie);
 }
 
+

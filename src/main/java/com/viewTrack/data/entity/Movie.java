@@ -38,7 +38,7 @@ public class Movie extends AbstractEntity {
     @Column(name = "release_date")
     private LocalDate releaseDate;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @ManyToOne
