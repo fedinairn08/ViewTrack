@@ -255,14 +255,18 @@
                 </p>
 
                 <div class="mt-auto pt-4">
-                    <div class="flex items-center flex-shrink-0">
-                        <span class="text-yellow-500 font-bold"
-                              th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)} + '/10'">
-                            0.0/10
-                        </span>
-                        <span class="ml-1 text-xs text-gray-500"
-                              th:text="(${movie.averageRating > 0} ? 'средний рейтинг' : 'еще не оценен')">
-                            средний рейтинг
+                    <div data-average-rating-container class="flex items-center flex-shrink-0">
+                        <th:block th:if="${movie.averageRating > 0}">
+                            <span class="text-yellow-500 font-bold"
+                                  th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)} + '/10'">
+                                0.0/10
+                            </span>
+                            <span class="ml-1 text-xs text-gray-500">
+                                средний рейтинг
+                            </span>
+                        </th:block>
+                        <span th:unless="${movie.averageRating > 0}" class="text-sm text-gray-500">
+                            Фильм еще не оценен
                         </span>
                     </div>
                     <div class="mt-4">

@@ -121,7 +121,62 @@
     </form>
 
     <script>
+        function applyPendingMovieCardUpdates() {
+            try {
+                const rawUpdates = sessionStorage.getItem('pendingMovieCardUpdates');
+                if (!rawUpdates) {
+                    return;
+                }
+
+                const updates = JSON.parse(rawUpdates);
+                let hasAppliedUpdates = false;
+
+                Object.entries(updates).forEach(([movieId, payload]) => {
+                    const card = document.querySelector(`[data-movie-id="${movieId}"]`);
+                    if (!card) {
+                        return;
+                    }
+
+                    const averageRating = Number(payload.averageRating || 0);
+                    const ratingContainer = card.querySelector('[data-average-rating-container]');
+
+                    if (ratingContainer) {
+                        ratingContainer.innerHTML = averageRating > 0
+                            ? `
+                                <span class="text-yellow-500 font-bold">${averageRating.toFixed(1)}/10</span>
+                                <span class="ml-1 text-xs text-gray-500">средний рейтинг</span>
+                            `
+                            : `
+                                <span class="text-sm text-gray-500">Фильм еще не оценен</span>
+                            `;
+                    }
+
+                    delete updates[movieId];
+                    hasAppliedUpdates = true;
+                });
+
+                if (hasAppliedUpdates) {
+                    if (Object.keys(updates).length === 0) {
+                        sessionStorage.removeItem('pendingMovieCardUpdates');
+                    } else {
+                        sessionStorage.setItem('pendingMovieCardUpdates', JSON.stringify(updates));
+                    }
+                }
+            } catch (error) {
+                console.error('Не удалось обновить карточки фильмов:', error);
+            }
+        }
+
+        window.addEventListener('pageshow', applyPendingMovieCardUpdates);
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                applyPendingMovieCardUpdates();
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
+            applyPendingMovieCardUpdates();
+
             const form = document.getElementById('filterForm');
             const sortSelect = document.getElementById('sort');
             const genreSelect = document.getElementById('genre');
@@ -172,6 +227,7 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <div th:each="movie : ${movies}"
+             th:attr="data-movie-id=${movie.id}"
              class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105 flex flex-col h-full">
             <a th:href="@{/api/movie/{id}(id=${movie.id})}" class="block flex flex-col flex-1 h-full">
                 <div th:if="${movie.poster?.filename != null}" class="flex-shrink-0">
@@ -195,13 +251,18 @@
                         2023 • Жанр
                     </p>
                     <div class="mt-auto pt-4">
-                        <div class="flex items-center">
-                            <span class="text-yellow-500 font-bold"
-                                  th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)} + '/10'">
-                                0.0/10
-                            </span>
-                            <span class="ml-1 text-xs text-gray-500" th:text="(${movie.averageRating > 0} ? 'средний рейтинг' : 'еще не оценен')">
-                                средний рейтинг
+                        <div data-average-rating-container class="flex items-center">
+                            <th:block th:if="${movie.averageRating > 0}">
+                                <span class="text-yellow-500 font-bold"
+                                      th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)} + '/10'">
+                                    0.0/10
+                                </span>
+                                <span class="ml-1 text-xs text-gray-500">
+                                    средний рейтинг
+                                </span>
+                            </th:block>
+                            <span th:unless="${movie.averageRating > 0}" class="text-sm text-gray-500">
+                                Фильм еще не оценен
                             </span>
                         </div>
                         <div class="mt-3 pt-3 border-t border-gray-200">

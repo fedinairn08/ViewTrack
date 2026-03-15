@@ -96,22 +96,23 @@
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mb-6">
                     <div class="relative" id="rateMovieContainer">
                         <button th:if="${userRating == null}"
+                                type="button"
                                 id="rateMovieButton"
                                 class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors w-full sm:w-auto">
                             Оценить фильм
                         </button>
 
                         <button th:if="${userRating != null}"
+                                type="button"
                                 id="ratedMovieButton"
-                                onclick="toggleActionDropdown()"
                                 class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors w-full sm:w-auto">
                             Оценено: <span th:text="${userRating}"></span>/10 ★ <span class="text-sm opacity-75">(Изменить)</span>
                         </button>
 
                         <div id="actionDropdown" class="absolute z-10 mt-2 w-48 bg-white rounded-md shadow-lg hidden">
                             <div class="py-1">
-                                <div class="px-4 py-2 hover:bg-blue-50 cursor-pointer text-blue-600 hover:text-blue-800"
-                                     onclick="showRatingDropdown()">
+                                <div id="editRatingAction"
+                                     class="px-4 py-2 hover:bg-blue-50 cursor-pointer text-blue-600 hover:text-blue-800">
                                     <span class="flex items-center">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -119,8 +120,8 @@
                                         Изменить оценку
                                     </span>
                                 </div>
-                                <div class="px-4 py-2 hover:bg-red-50 cursor-pointer text-red-600 hover:text-red-800"
-                                     onclick="removeRating()">
+                                <div id="removeRatingAction"
+                                     class="px-4 py-2 hover:bg-red-50 cursor-pointer text-red-600 hover:text-red-800">
                                     <span class="flex items-center">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -187,12 +188,19 @@
                         <h2 class="text-xl font-semibold text-gray-900 mb-2">Средний рейтинг фильма</h2>
                         <p class="text-sm text-gray-600">на основе <span id="ratingsCount" th:text="${ratingsCount}">0</span> оценок</p>
                     </div>
-                    <div class="text-right">
-                        <span id="averageRating" class="text-3xl font-bold text-yellow-500"
-                              th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)}">
-                            0.0
+                    <div id="averageRatingContainer" class="text-right">
+                        <th:block th:if="${movie.averageRating > 0}">
+                            <span id="averageRating" class="text-3xl font-bold text-yellow-500"
+                                  th:text="${#numbers.formatDecimal(movie.averageRating, 1, 1)}">
+                                0.0
+                            </span>
+                            <span class="text-gray-600">/10</span>
+                        </th:block>
+                        <span th:unless="${movie.averageRating > 0}"
+                              id="averageRatingEmpty"
+                              class="text-lg font-medium text-gray-500">
+                            Фильм еще не оценен
                         </span>
-                        <span class="text-gray-600">/10</span>
                     </div>
                 </div>
 
@@ -336,26 +344,7 @@
             ratingDropdown.classList.add('hidden');
         }
 
-        const rateMovieButton = document.getElementById('rateMovieButton');
-        if (rateMovieButton) {
-            console.log('Found rateMovieButton in DOMContentLoaded, adding event listener');
-            rateMovieButton.addEventListener('click', function() {
-                console.log('Rate movie button clicked from DOMContentLoaded!');
-                const ratingDropdown = document.getElementById('ratingDropdown');
-                if (ratingDropdown) {
-                    ratingDropdown.classList.remove('hidden');
-                    console.log('Rating dropdown shown from DOMContentLoaded');
-
-                    setTimeout(() => {
-                        document.addEventListener('click', closeRatingDropdownOnOutsideClick);
-                    }, 0);
-                } else {
-                    console.error('Rating dropdown not found in DOMContentLoaded!');
-                }
-            });
-        } else {
-            console.log('rateMovieButton not found in DOMContentLoaded');
-        }
+        bindRatingControls();
 
         const editReviewButtons = document.querySelectorAll('.edit-review-btn');
         editReviewButtons.forEach(button => {
@@ -552,6 +541,114 @@
         if (parts.length === 2) return parts.pop().split(';').shift();
     }
 
+    function cacheMovieCardUpdate(movieId, averageRating) {
+        try {
+            const rawUpdates = sessionStorage.getItem('pendingMovieCardUpdates');
+            const updates = rawUpdates ? JSON.parse(rawUpdates) : {};
+
+            updates[String(movieId)] = {
+                averageRating: Number(averageRating)
+            };
+
+            sessionStorage.setItem('pendingMovieCardUpdates', JSON.stringify(updates));
+        } catch (error) {
+            console.error('Не удалось сохранить обновление карточки фильма:', error);
+        }
+    }
+
+    function bindRatingControls() {
+        bindRateMovieButton();
+        bindRatedMovieButton();
+        bindRatingActionButtons();
+    }
+
+    function bindRateMovieButton() {
+        const rateMovieButton = document.getElementById('rateMovieButton');
+        if (rateMovieButton && !rateMovieButton.dataset.bound) {
+            rateMovieButton.dataset.bound = 'true';
+            rateMovieButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                openRatingDropdown();
+            });
+        }
+    }
+
+    function bindRatedMovieButton() {
+        const ratedMovieButton = document.getElementById('ratedMovieButton');
+        if (ratedMovieButton && !ratedMovieButton.dataset.bound) {
+            ratedMovieButton.dataset.bound = 'true';
+            ratedMovieButton.addEventListener('click', toggleActionDropdown);
+        }
+    }
+
+    function bindRatingActionButtons() {
+        const editRatingAction = document.getElementById('editRatingAction');
+        if (editRatingAction && !editRatingAction.dataset.bound) {
+            editRatingAction.dataset.bound = 'true';
+            editRatingAction.addEventListener('click', showRatingDropdown);
+        }
+
+        const removeRatingAction = document.getElementById('removeRatingAction');
+        if (removeRatingAction && !removeRatingAction.dataset.bound) {
+            removeRatingAction.dataset.bound = 'true';
+            removeRatingAction.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                removeRating();
+            });
+        }
+    }
+
+    function createRateMovieButton() {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = 'rateMovieButton';
+        button.className = 'px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors w-full sm:w-auto';
+        button.textContent = 'Оценить фильм';
+        return button;
+    }
+
+    function createRatedMovieButton(score) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = 'ratedMovieButton';
+        button.className = 'px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors w-full sm:w-auto';
+        button.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
+        return button;
+    }
+
+    function replaceRatingButton(score = null) {
+        const currentButton = document.getElementById('rateMovieButton') || document.getElementById('ratedMovieButton');
+        if (!currentButton) {
+            return;
+        }
+
+        const nextButton = score === null ? createRateMovieButton() : createRatedMovieButton(score);
+        currentButton.replaceWith(nextButton);
+        bindRatingControls();
+    }
+
+    function openRatingDropdown() {
+        const actionDropdown = document.getElementById('actionDropdown');
+        const ratingDropdown = document.getElementById('ratingDropdown');
+
+        document.removeEventListener('click', closeActionDropdownOnOutsideClick);
+        document.removeEventListener('click', closeRatingDropdownOnOutsideClick);
+
+        if (actionDropdown) {
+            actionDropdown.classList.add('hidden');
+        }
+
+        if (ratingDropdown) {
+            ratingDropdown.classList.remove('hidden');
+
+            setTimeout(() => {
+                document.addEventListener('click', closeRatingDropdownOnOutsideClick);
+            }, 0);
+        }
+    }
+
     function submitRating(element) {
         const movieId = [[${movie.id}]];
         const score = element.getAttribute('data-score');
@@ -577,6 +674,7 @@
         })
         .then(data => {
             updateRatingButton(score);
+            cacheMovieCardUpdate(movieId, data.averageRating);
 
             const ratingDropdown = document.getElementById('ratingDropdown');
             if (ratingDropdown) {
@@ -619,11 +717,20 @@
     }
 
     function updateAverageRating(averageRating, ratingsCount) {
-        const averageRatingElement = document.getElementById('averageRating');
+        const averageRatingContainer = document.getElementById('averageRatingContainer');
         const ratingsCountElement = document.getElementById('ratingsCount');
 
-        if (averageRatingElement) {
-            averageRatingElement.textContent = averageRating.toFixed(1);
+        if (averageRatingContainer) {
+            if (averageRating > 0) {
+                averageRatingContainer.innerHTML = `
+                    <span id="averageRating" class="text-3xl font-bold text-yellow-500">${averageRating.toFixed(1)}</span>
+                    <span class="text-gray-600">/10</span>
+                `;
+            } else {
+                averageRatingContainer.innerHTML = `
+                    <span id="averageRatingEmpty" class="text-lg font-medium text-gray-500">Фильм еще не оценен</span>
+                `;
+            }
         }
 
         if (ratingsCountElement) {
@@ -632,28 +739,18 @@
     }
 
     function updateRatingButton(score) {
-        const rateMovieButton = document.getElementById('rateMovieButton');
-        const ratedMovieButton = document.getElementById('ratedMovieButton');
+        replaceRatingButton(score);
 
-        if (rateMovieButton) {
-            rateMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
-            rateMovieButton.classList.remove('bg-purple-600', 'hover:bg-purple-700');
-            rateMovieButton.classList.add('bg-green-600', 'hover:bg-green-700');
-            rateMovieButton.id = 'ratedMovieButton';
-            rateMovieButton.onclick = toggleActionDropdown;
-        }
-
-        if (ratedMovieButton) {
-            ratedMovieButton.innerHTML = `Оценено: ${score}/10 ★ <span class="text-sm opacity-75">(Изменить)</span>`;
-            ratedMovieButton.onclick = toggleActionDropdown;
-        }
-
+        const actionDropdown = document.getElementById('actionDropdown');
         const ratingDropdown = document.getElementById('ratingDropdown');
+        if (actionDropdown) {
+            actionDropdown.classList.add('hidden');
+        }
         if (ratingDropdown) {
             ratingDropdown.classList.add('hidden');
         }
-
-        console.log('Rating button updated to:', score);
+        document.removeEventListener('click', closeActionDropdownOnOutsideClick);
+        document.removeEventListener('click', closeRatingDropdownOnOutsideClick);
     }
 
     function addToWatchlist(button) {
@@ -731,18 +828,27 @@
             });
     }
 
-    function toggleActionDropdown() {
+    function toggleActionDropdown(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
         const actionDropdown = document.getElementById('actionDropdown');
         const ratingDropdown = document.getElementById('ratingDropdown');
-        
+
         if (actionDropdown) {
             if (ratingDropdown) {
                 ratingDropdown.classList.add('hidden');
             }
 
-            actionDropdown.classList.toggle('hidden');
+            document.removeEventListener('click', closeRatingDropdownOnOutsideClick);
 
-            if (!actionDropdown.classList.contains('hidden')) {
+            const shouldOpen = actionDropdown.classList.contains('hidden');
+            actionDropdown.classList.toggle('hidden');
+            document.removeEventListener('click', closeActionDropdownOnOutsideClick);
+
+            if (shouldOpen) {
                 setTimeout(() => {
                     document.addEventListener('click', closeActionDropdownOnOutsideClick);
                 }, 0);
@@ -753,43 +859,32 @@
     function closeActionDropdownOnOutsideClick(event) {
         const actionDropdown = document.getElementById('actionDropdown');
         const ratedButton = document.getElementById('ratedMovieButton');
-        
-        if (actionDropdown && !actionDropdown.contains(event.target) && !ratedButton.contains(event.target)) {
+
+        const clickedRatedButton = ratedButton && ratedButton.contains(event.target);
+        if (actionDropdown && !actionDropdown.contains(event.target) && !clickedRatedButton) {
             actionDropdown.classList.add('hidden');
             document.removeEventListener('click', closeActionDropdownOnOutsideClick);
         }
     }
 
-    function showRatingDropdown() {
-        console.log('showRatingDropdown function called!');
-        const actionDropdown = document.getElementById('actionDropdown');
-        const ratingDropdown = document.getElementById('ratingDropdown');
-        
-        console.log('actionDropdown:', actionDropdown);
-        console.log('ratingDropdown:', ratingDropdown);
-        
-        if (actionDropdown) {
-            actionDropdown.classList.add('hidden');
-            console.log('Action dropdown hidden');
+    function showRatingDropdown(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
         }
-        
-        if (ratingDropdown) {
-            ratingDropdown.classList.remove('hidden');
-            console.log('Rating dropdown shown');
 
-            setTimeout(() => {
-                document.addEventListener('click', closeRatingDropdownOnOutsideClick);
-            }, 0);
-        } else {
-            console.error('Rating dropdown not found in showRatingDropdown!');
-        }
+        openRatingDropdown();
     }
 
     function closeRatingDropdownOnOutsideClick(event) {
         const ratingDropdown = document.getElementById('ratingDropdown');
+        const rateButton = document.getElementById('rateMovieButton');
         const ratedButton = document.getElementById('ratedMovieButton');
-        
-        if (ratingDropdown && !ratingDropdown.contains(event.target) && !ratedButton.contains(event.target)) {
+
+        const clickedTrigger = (rateButton && rateButton.contains(event.target))
+            || (ratedButton && ratedButton.contains(event.target));
+
+        if (ratingDropdown && !ratingDropdown.contains(event.target) && !clickedTrigger) {
             ratingDropdown.classList.add('hidden');
             document.removeEventListener('click', closeRatingDropdownOnOutsideClick);
         }
@@ -820,42 +915,15 @@
             return response.json();
         })
         .then(data => {
-            const rateMovieContainer = document.getElementById('rateMovieContainer');
-            rateMovieContainer.innerHTML = `
-                <button id="rateMovieButton"
-                        class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors w-full sm:w-auto">
-                    Оценить фильм
-                </button>
-            `;
-
-            const newRateMovieButton = document.getElementById('rateMovieButton');
-            if (newRateMovieButton) {
-                newRateMovieButton.replaceWith(newRateMovieButton.cloneNode(true));
-                const freshButton = document.getElementById('rateMovieButton');
-                
-                freshButton.addEventListener('click', function() {
-                    console.log('Rate movie button clicked!');
-                    const ratingDropdown = document.getElementById('ratingDropdown');
-                    if (ratingDropdown) {
-                        ratingDropdown.classList.remove('hidden');
-                        console.log('Rating dropdown shown');
-
-                        setTimeout(() => {
-                            document.addEventListener('click', closeRatingDropdownOnOutsideClick);
-                        }, 0);
-                    } else {
-                        console.error('Rating dropdown not found!');
-                    }
-                });
-                console.log('Event listener added to rate movie button');
-            } else {
-                console.error('Rate movie button not found after creation!');
-            }
+            replaceRatingButton();
+            cacheMovieCardUpdate(movieId, data.averageRating);
 
             const actionDropdown = document.getElementById('actionDropdown');
             const ratingDropdown = document.getElementById('ratingDropdown');
             if (actionDropdown) actionDropdown.classList.add('hidden');
             if (ratingDropdown) ratingDropdown.classList.add('hidden');
+            document.removeEventListener('click', closeActionDropdownOnOutsideClick);
+            document.removeEventListener('click', closeRatingDropdownOnOutsideClick);
 
             const leaveReviewButtonContainer = document.getElementById('leaveReviewButtonContainer');
             if (leaveReviewButtonContainer) {
