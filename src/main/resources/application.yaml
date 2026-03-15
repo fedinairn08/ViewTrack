@@ -1,3 +1,7 @@
+server:
+  tomcat:
+    max-part-count: 100
+
 spring:
   application:
     name: viewTrack
