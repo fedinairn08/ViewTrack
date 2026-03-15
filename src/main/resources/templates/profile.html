@@ -29,7 +29,8 @@
         </nav>
 
         <a href="/api/user/profile" class="flex-shrink-0">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden bg-gray-200">
+            <div id="headerProfileAvatar"
+                 class="w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-shadow overflow-hidden bg-gray-200">
                 <img th:if="${user.profileImage?.filename != null}"
                      th:src="'/api/image/get/' + ${user.profileImage.filename}"
                      th:alt="${user.name + ' ' + user.surname}"
@@ -56,14 +57,14 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-center mb-6">
                     <div class="relative inline-block">
-                        <img th:if="${user.profileImage?.filename != null}"
-                             id="sidebarProfileImage"
-                             th:src="'/api/image/get/' + ${user.profileImage.filename}"
-                             alt="Фото профиля"
-                             class="w-24 h-24 rounded-full object-cover mx-auto" />
-                        <div th:unless="${user.profileImage?.filename != null}"
-                             class="w-24 h-24 rounded-full flex items-center justify-center bg-gray-200 mx-auto">
-                            <svg xmlns="http://www.w3.org/2000/svg"
+                        <div id="sidebarProfileAvatar"
+                             class="w-24 h-24 rounded-full flex items-center justify-center bg-gray-200 mx-auto overflow-hidden">
+                            <img th:if="${user.profileImage?.filename != null}"
+                                 th:src="'/api/image/get/' + ${user.profileImage.filename}"
+                                 alt="Фото профиля"
+                                 class="w-full h-full object-cover" />
+                            <svg th:unless="${user.profileImage?.filename != null}"
+                                 xmlns="http://www.w3.org/2000/svg"
                                  class="h-12 w-12 text-gray-600"
                                  fill="none"
                                  viewBox="0 0 24 24"
@@ -278,6 +279,51 @@
         const changePhotoBtn = document.getElementById('changePhotoBtn');
         const cancelPhotoBtn = document.getElementById('cancelPhotoBtn');
         const photoFormContainer = document.getElementById('photoFormContainer');
+        const headerProfileAvatar = document.getElementById('headerProfileAvatar');
+        const sidebarProfileAvatar = document.getElementById('sidebarProfileAvatar');
+
+        function getCurrentFullName() {
+            return (document.getElementById('sidebarFullName')?.textContent || 'Фото профиля').trim();
+        }
+
+        function renderProfileAvatar(container, imageUrl, altText, placeholderMarkup) {
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = '';
+
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = altText;
+                img.className = 'w-full h-full object-cover';
+                container.appendChild(img);
+                return;
+            }
+
+            container.innerHTML = placeholderMarkup;
+        }
+
+        function updateProfileImages(filename) {
+            const timestamp = new Date().getTime();
+            const imageUrl = filename ? `/api/image/get/${filename}?t=${timestamp}` : null;
+            const altText = getCurrentFullName();
+
+            renderProfileAvatar(
+                headerProfileAvatar,
+                imageUrl,
+                altText,
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`
+            );
+
+            renderProfileAvatar(
+                sidebarProfileAvatar,
+                imageUrl,
+                altText,
+                `<svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`
+            );
+        }
 
         editProfileBtn.addEventListener('click', function() {
             profileView.classList.add('hidden');
@@ -347,11 +393,7 @@
                         document.getElementById('profileView').classList.remove('hidden');
                         profileEditForm.classList.add('hidden');
 
-                        if (updatedUser.profileImage && updatedUser.profileImage.filename) {
-                            const profileImage = document.querySelector('.relative img');
-                            const timestamp = new Date().getTime();
-                            profileImage.src = `/api/image/get/${updatedUser.profileImage.filename}?t=${timestamp}`;
-                        }
+                        updateProfileImages(updatedUser.profileImage?.filename || null);
 
                     })
                     .catch(error => {
@@ -447,11 +489,10 @@
                     }
                 })
                 .then(data => {
-                    const img = document.querySelector('.relative img');
-                    const timestamp = new Date().getTime();
-                    img.src = '/api/image/get/' + data.filename + '?t=' + timestamp;
+                    updateProfileImages(data.filename);
 
                     photoFormContainer.classList.add('hidden');
+                    fileInput.value = '';
                 })
                 .catch(error => {
                     console.error('Ошибка:', error);
