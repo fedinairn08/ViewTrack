@@ -109,6 +109,11 @@
 
         <div class="mb-4">
           <label class="block text-sm font-medium text-gray-700 mb-1">Режиссеры *</label>
+          <input type="text"
+                 id="directorSearchInput"
+                 autocomplete="off"
+                 placeholder="Найти режиссера по ФИО..."
+                 class="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500">
           <div class="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border border-gray-300 rounded-md p-2">
             <div th:each="director : ${directors}" class="director-card p-2 border border-gray-200 rounded cursor-pointer"
                  th:attr="data-id=${director.id}">
@@ -117,7 +122,8 @@
               <span th:text="${director.fullName}">Режиссер</span>
             </div>
           </div>
-          <p class="mt-1 text-sm text-gray-500">Выберите одного или нескольких режиссеров</p>
+          <p id="directorSearchEmpty" class="hidden mt-2 text-sm text-gray-500">Режиссер не найден</p>
+          <p class="mt-1 text-sm text-gray-500">Выберите одного или нескольких режиссеров. Можно искать по имени и выбирать карточкой.</p>
         </div>
       </div>
 
@@ -189,6 +195,8 @@
     const posterPlaceholder = document.getElementById('posterPlaceholder');
     const posterPreview = document.getElementById('posterPreview');
     const posterImage = document.getElementById('posterImage');
+    const directorSearchInput = document.getElementById('directorSearchInput');
+    const directorSearchEmpty = document.getElementById('directorSearchEmpty');
 
     posterInput.addEventListener('change', function(e) {
       if (e.target.files && e.target.files[0]) {
@@ -247,6 +255,35 @@
         }
       });
     });
+
+    function filterDirectors() {
+      const query = (directorSearchInput?.value || '').trim().toLowerCase();
+      let visibleDirectorsCount = 0;
+
+      document.querySelectorAll('.director-card').forEach(card => {
+        const directorName = (card.querySelector('span')?.textContent || '').toLowerCase();
+        const isVisible = !query || directorName.includes(query);
+
+        card.classList.toggle('hidden', !isVisible);
+        if (isVisible) {
+          visibleDirectorsCount += 1;
+        }
+      });
+
+      if (directorSearchEmpty) {
+        directorSearchEmpty.classList.toggle('hidden', !query || visibleDirectorsCount > 0);
+      }
+    }
+
+    if (directorSearchInput) {
+      directorSearchInput.addEventListener('input', filterDirectors);
+      directorSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+        }
+      });
+      filterDirectors();
+    }
 
     cancelBtn.addEventListener('click', function() {
       window.location.href = '/api/admin/movies';
