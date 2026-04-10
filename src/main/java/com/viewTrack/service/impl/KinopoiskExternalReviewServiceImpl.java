@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
@@ -144,11 +145,28 @@ public class KinopoiskExternalReviewServiceImpl implements ExternalReviewService
     private ExternalReviewResponseDto toExternalReview(KinopoiskReviewDto review) {
         return ExternalReviewResponseDto.builder()
                 .author(review.author() == null || review.author().isBlank() ? "Пользователь Кинопоиска" : review.author())
-                .content(review.review())
+                .content(sanitizeReviewText(review.review()))
                 .rating(toDouble(review.userRating()))
                 .sourceUrl(null)
                 .createdAt(parseDateTime(review.date()))
                 .build();
+    }
+
+    private String sanitizeReviewText(String rawText) {
+        if (rawText == null || rawText.isBlank()) {
+            return rawText;
+        }
+
+        String withLineBreaks = rawText.replaceAll("(?i)<br\\s*/?>", "\n");
+        String withoutTags = withLineBreaks.replaceAll("<[^>]+>", "");
+        String unescaped = HtmlUtils.htmlUnescape(withoutTags);
+
+        return unescaped
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .replaceAll("[ \\t]+", " ")
+                .replaceAll("\\n{3,}", "\n\n")
+                .trim();
     }
 
     private Double toDouble(Number value) {
