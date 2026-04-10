@@ -170,7 +170,12 @@ public class KinopoiskExternalReviewServiceImpl implements ExternalReviewService
     }
 
     private Double toDouble(Number value) {
-        return value == null ? null : value.doubleValue();
+        if (value == null) {
+            return null;
+        }
+
+        double rating = value.doubleValue();
+        return rating > 0 ? rating : null;
     }
 
     private LocalDateTime parseDateTime(String value) {

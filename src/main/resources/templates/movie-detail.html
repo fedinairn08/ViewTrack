@@ -345,7 +345,7 @@
                                        class="text-sm text-gray-500"
                                        th:text="${#temporals.format(review.createdAt, 'dd.MM.yyyy HH:mm')}"></p>
                                 </div>
-                                <span th:if="${review.rating != null}"
+                                <span th:if="${review.rating != null and review.rating > 0}"
                                       class="text-sm font-semibold text-yellow-600"
                                       th:text="${#numbers.formatDecimal(review.rating, 1, 1)} + '/10'"></span>
                             </div>
