@@ -2,6 +2,7 @@ package com.viewTrack.controller;
 
 import com.viewTrack.data.entity.*;
 import com.viewTrack.data.repository.ReviewRepository;
+import com.viewTrack.dto.response.ExternalReviewResponseDto;
 import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.service.*;
 import com.viewTrack.utils.AuthUtils;
@@ -34,6 +35,8 @@ public class MovieController {
     private final DirectorService directorService;
     
     private final AiReviewService aiReviewService;
+
+    private final ExternalReviewService externalReviewService;
 
     @GetMapping("/all")
     public String showAllMoviesForm(@RequestParam(required = false) String sort,
@@ -130,6 +133,10 @@ public class MovieController {
         boolean inWatched;
 
         List<Review> movieReviews = reviewRepository.findByMovieId(id);
+        boolean externalReviewsConfigured = externalReviewService.isConfigured();
+        List<ExternalReviewResponseDto> externalReviews = externalReviewsConfigured
+                ? externalReviewService.getReviewsForMovie(movie)
+                : List.of();
 
         Long ratingsCount = reviewRepository.countByMovie(movie);
 
@@ -153,6 +160,9 @@ public class MovieController {
         model.addAttribute("inWatched", inWatched);
         model.addAttribute("title", movie.getTitle());
         model.addAttribute("movieReviews", movieReviews);
+        model.addAttribute("externalReviews", externalReviews);
+        model.addAttribute("externalReviewsConfigured", externalReviewsConfigured);
+        model.addAttribute("externalReviewsProvider", externalReviewService.getProviderName());
         model.addAttribute("ratingsCount", ratingsCount);
 
         AiReview aiReview = aiReviewService.getOrGenerateReviewForMovie(id);

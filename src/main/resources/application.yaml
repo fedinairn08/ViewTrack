@@ -37,3 +37,6 @@ s3:
 
 gigachat:
   secret: ${GIGACHAT_CLIENT_SECRET}
+
+kinopoisk:
+  api-key: ${KINOPOISK_API_KEY:}
