@@ -38,6 +38,8 @@ public class MovieController {
 
     private final ExternalReviewService externalReviewService;
 
+    private final RecommendationService recommendationService;
+
     @GetMapping("/all")
     public String showAllMoviesForm(@RequestParam(required = false) String sort,
                                     @RequestParam(required = false) String genre,
@@ -61,6 +63,7 @@ public class MovieController {
         model.addAttribute("movies", movies);
         model.addAttribute("searchTerm", search);
         model.addAttribute("title", "Фильмы");
+        model.addAttribute("active", "films");
         return "allFilms";
     }
 
@@ -120,6 +123,22 @@ public class MovieController {
         model.addAttribute("active", "watched");
 
         return "watched";
+    }
+
+    @GetMapping("/recommendations")
+    public String showRecommendations(@RequestParam(required = false) Integer limit, Model model) {
+        User currentUser = authUtils.getUserEntity();
+        int recommendationsLimit = limit == null ? 12 : limit;
+
+        List<Movie> recommendedMovies = recommendationService.getRecommendations(currentUser, recommendationsLimit);
+
+        model.addAttribute("movies", recommendedMovies);
+        model.addAttribute("user", currentUser);
+        model.addAttribute("title", "Рекомендации");
+        model.addAttribute("active", "recommendations");
+        model.addAttribute("recommendationLimit", recommendationsLimit);
+
+        return "recommendations";
     }
 
     @GetMapping("/{id}")
