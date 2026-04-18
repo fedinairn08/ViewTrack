@@ -235,13 +235,14 @@
              th:attr="data-movie-id=${movie.id}"
              class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105 flex flex-col h-full">
             <a th:href="@{/api/movie/{id}(id=${movie.id})}" class="block flex flex-col flex-1 h-full">
-                <div th:if="${movie.poster?.filename != null}" class="flex-shrink-0">
+                <div th:if="${movie.poster?.filename != null}"
+                     class="w-full aspect-[2/3] bg-gray-100 flex items-center justify-center flex-shrink-0">
                 <img th:src="'/api/image/get/' + ${movie.poster.filename}"
                      th:alt="${movie.title}"
-                     class="w-full h-64 object-cover" />
+                     class="w-full h-full object-contain" />
                 </div>
                 <div th:if="${movie.poster?.filename == null}"
-                     class="w-full h-64 bg-gray-200 flex items-center justify-center flex-shrink-0">
+                     class="w-full aspect-[2/3] bg-gray-200 flex items-center justify-center flex-shrink-0">
                     <div class="text-center">
                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />

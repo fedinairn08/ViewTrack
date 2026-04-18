@@ -60,13 +60,14 @@
         <a th:each="movie : ${movies}"
            th:href="@{/api/movie/{id}(id=${movie.id})}"
            class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105 flex flex-col h-full">
-            <div th:if="${movie.poster?.filename != null}" class="flex-shrink-0">
+            <div th:if="${movie.poster?.filename != null}"
+                 class="w-full aspect-[2/3] bg-gray-100 flex items-center justify-center flex-shrink-0">
                 <img th:src="'/api/image/get/' + ${movie.poster.filename}"
                      th:alt="${movie.title}"
-                     class="w-full h-64 object-cover" />
+                     class="w-full h-full object-contain" />
             </div>
             <div th:if="${movie.poster?.filename == null}"
-                 class="w-full h-64 bg-gray-200 flex items-center justify-center flex-shrink-0">
+                 class="w-full aspect-[2/3] bg-gray-200 flex items-center justify-center flex-shrink-0">
                 <div class="text-center">
                     <p class="mt-1 text-sm text-gray-500">Постер отсутствует</p>
                 </div>
