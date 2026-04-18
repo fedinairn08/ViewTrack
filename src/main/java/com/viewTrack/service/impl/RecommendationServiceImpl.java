@@ -1,21 +1,32 @@
 package com.viewTrack.service.impl;
 
 import com.viewTrack.data.entity.*;
+import com.viewTrack.data.enums.Type;
 import com.viewTrack.data.repository.MovieRepository;
 import com.viewTrack.data.repository.ReviewRepository;
 import com.viewTrack.data.repository.UserMovieRepository;
+import com.viewTrack.service.GigaChatService;
 import com.viewTrack.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecommendationServiceImpl implements RecommendationService {
 
     private static final int DEFAULT_LIMIT = 12;
+    private static final int MIN_AI_CANDIDATE_POOL = 18;
+    private static final int MAX_AI_CANDIDATE_POOL = 30;
+    private static final int AI_CANDIDATE_MULTIPLIER = 3;
+    private static final int MAX_PROFILE_POSITIVE_ITEMS = 6;
+    private static final int MAX_PROFILE_NEGATIVE_ITEMS = 4;
+    private static final int MAX_PROFILE_TO_WATCH_ITEMS = 6;
+    private static final int MAX_REVIEW_EXCERPT_LENGTH = 180;
     private static final float MIN_SCORE = 0.35f;
     private static final Set<String> STOP_WORDS = Set.of("и", "в", "во", "на", "по", "с", "со", "а", "но", "или",
             "как", "для", "это", "этот", "эта", "что", "где", "когда", "над", "под", "из", "без", "у", "о", "об", "от",
@@ -36,115 +47,74 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final MovieRepository movieRepository;
     private final UserMovieRepository userMovieRepository;
     private final ReviewRepository reviewRepository;
+    private final GigaChatService gigaChatService;
 
     @Override
     public List<Movie> getRecommendations(User user, int limit) {
         int effectiveLimit = limit > 0 ? limit : DEFAULT_LIMIT;
+        int candidatePoolSize = resolveCandidatePoolSize(effectiveLimit);
         List<Movie> allMovies = movieRepository.findAllWithGenresAndDirectors();
         if (allMovies.isEmpty()) {
             return List.of();
         }
 
         List<UserMovie> userMovies = userMovieRepository.findByUser(user);
-        Set<Long> excludedMovieIds = userMovies.stream()
-                .map(userMovie -> userMovie.getMovie().getId())
-                .collect(Collectors.toSet());
+        Set<Long> excludedMovieIds = extractExcludedMovieIds(userMovies);
 
         List<Review> userReviews = reviewRepository.findByUser(user);
         if (userReviews.isEmpty() && excludedMovieIds.isEmpty()) {
-            return allMovies.stream()
-                    .sorted(Comparator.comparing(Movie::getAverageRating).reversed())
-                    .limit(effectiveLimit)
-                    .toList();
+            return topRatedMovies(allMovies, excludedMovieIds, effectiveLimit);
         }
 
-        Map<Long, Integer> userRatings = userReviews.stream()
-                .filter(review -> review.getMovie() != null && review.getMovie().getId() != null)
-                .collect(Collectors.toMap(
-                        review -> review.getMovie().getId(),
-                        Review::getRating,
-                        (left, right) -> right
-                ));
+        Map<Long, Integer> userRatings = extractUserRatings(userReviews);
+        Set<Long> preferenceMovieIds = new HashSet<>(excludedMovieIds);
+        preferenceMovieIds.addAll(userRatings.keySet());
 
-        Map<String, Float> preferredGenres = new HashMap<>();
-        Map<Long, Float> preferredDirectors = new HashMap<>();
-        Set<String> preferredTextTokens = new HashSet<>();
-
-        for (Movie movie : allMovies) {
-            if (!excludedMovieIds.contains(movie.getId()) && !userRatings.containsKey(movie.getId())) {
-                continue;
-            }
-
-            int rating = userRatings.getOrDefault(movie.getId(), 7);
-            float weight = toPreferenceWeight(rating);
-
-            for (Genre genre : movie.getGenres()) {
-                preferredGenres.merge(genre.getGenreName(), weight, Float::sum);
-            }
-            for (Director director : movie.getDirectors()) {
-                preferredDirectors.merge(director.getId(), weight, Float::sum);
-            }
-        }
-
-        for (Review review : userReviews) {
-            if (review.getContent() == null || review.getContent().isBlank()) {
-                continue;
-            }
-
-            float textWeight = toPreferenceWeight(review.getRating());
-            if (textWeight <= 0) {
-                continue;
-            }
-
-            preferredTextTokens.addAll(tokenize(review.getContent()));
-        }
-
-        if (preferredGenres.isEmpty() && preferredDirectors.isEmpty()) {
-            return allMovies.stream()
-                    .filter(movie -> !excludedMovieIds.contains(movie.getId()))
-                    .sorted(Comparator.comparing(Movie::getAverageRating).reversed())
-                    .limit(effectiveLimit)
-                    .toList();
-        }
-
-        List<MovieScore> scored = new ArrayList<>();
-        for (Movie movie : allMovies) {
-            if (excludedMovieIds.contains(movie.getId())) {
-                continue;
-            }
-
-            float score = 0;
-            for (Genre genre : movie.getGenres()) {
-                score += preferredGenres.getOrDefault(genre.getGenreName(), 0f) * 1.6f;
-            }
-            for (Director director : movie.getDirectors()) {
-                score += preferredDirectors.getOrDefault(director.getId(), 0f) * 1.9f;
-            }
-
-            score += Math.max(movie.getAverageRating(), 0) * 0.45f;
-
-            if (!preferredTextTokens.isEmpty()) {
-                Set<String> movieTokens = tokenize(movie.getTitle() + " " + safeText(movie.getDescription()));
-                if (!movieTokens.isEmpty()) {
-                    long matches = movieTokens.stream().filter(preferredTextTokens::contains).count();
-                    score += ((float) matches / movieTokens.size()) * 2.5f;
-                }
-            }
-
-            if (score >= MIN_SCORE) {
-                scored.add(new MovieScore(movie, score));
-            }
-        }
-
-        return scored.stream()
-                .sorted(Comparator.comparing(MovieScore::score).reversed())
+        PreferenceSnapshot preferenceSnapshot = buildPreferenceSnapshot(allMovies, preferenceMovieIds, userReviews, userRatings);
+        List<Movie> heuristicRankedMovies = rankMoviesHeuristically(allMovies, excludedMovieIds, preferenceSnapshot, candidatePoolSize);
+        List<Movie> fallbackRecommendations = heuristicRankedMovies.stream()
                 .limit(effectiveLimit)
-                .map(MovieScore::movie)
                 .toList();
+
+        if (heuristicRankedMovies.isEmpty()) {
+            return topRatedMovies(allMovies, excludedMovieIds, effectiveLimit);
+        }
+
+        List<Movie> candidateMovies = buildCandidatePool(allMovies, excludedMovieIds, heuristicRankedMovies, candidatePoolSize);
+        if (candidateMovies.isEmpty()) {
+            return fallbackRecommendations;
+        }
+
+        String userTasteProfile = buildUserTasteProfile(allMovies, userMovies, userReviews, preferenceSnapshot);
+        List<Long> aiRankedIds = gigaChatService.rankMovieRecommendations(userTasteProfile, candidateMovies, effectiveLimit);
+        List<Movie> aiRankedMovies = mapAiIdsToMovies(aiRankedIds, candidateMovies);
+
+        if (aiRankedMovies.isEmpty()) {
+            log.info("AI не вернул валидный список рекомендаций, используется эвристический fallback");
+            return fallbackRecommendations;
+        }
+
+        return mergeRecommendations(aiRankedMovies, fallbackRecommendations, effectiveLimit);
     }
 
     private static String safeText(String value) {
         return value == null ? "" : value;
+    }
+
+    private static String safeTitle(Movie movie) {
+        return safeText(movie.getTitle());
+    }
+
+    private static Set<Genre> safeGenres(Movie movie) {
+        return movie.getGenres() == null ? Set.of() : movie.getGenres();
+    }
+
+    private static Set<Director> safeDirectors(Movie movie) {
+        return movie.getDirectors() == null ? Set.of() : movie.getDirectors();
+    }
+
+    private static float safeAverageRating(Movie movie) {
+        return Math.max(movie.getAverageRating(), 0);
     }
 
     private static float toPreferenceWeight(int rating) {
@@ -168,6 +138,375 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .filter(token -> token.length() > 2)
                 .filter(token -> !STOP_WORDS.contains(token))
                 .collect(Collectors.toSet());
+    }
+
+    private static String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength - 1) + "…";
+    }
+
+    private int resolveCandidatePoolSize(int effectiveLimit) {
+        int multipliedLimit = effectiveLimit * AI_CANDIDATE_MULTIPLIER;
+        return Math.max(MIN_AI_CANDIDATE_POOL, Math.min(MAX_AI_CANDIDATE_POOL, multipliedLimit));
+    }
+
+    private Set<Long> extractExcludedMovieIds(List<UserMovie> userMovies) {
+        return userMovies.stream()
+                .map(UserMovie::getMovie)
+                .filter(Objects::nonNull)
+                .map(Movie::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private Map<Long, Integer> extractUserRatings(List<Review> userReviews) {
+        return userReviews.stream()
+                .filter(review -> review.getMovie() != null && review.getMovie().getId() != null)
+                .collect(Collectors.toMap(
+                        review -> review.getMovie().getId(),
+                        Review::getRating,
+                        (left, right) -> right
+                ));
+    }
+
+    private PreferenceSnapshot buildPreferenceSnapshot(List<Movie> allMovies,
+                                                      Set<Long> preferenceMovieIds,
+                                                      List<Review> userReviews,
+                                                      Map<Long, Integer> userRatings) {
+        Map<String, Float> preferredGenres = new HashMap<>();
+        Map<Long, Float> preferredDirectors = new HashMap<>();
+        Set<String> preferredTextTokens = new HashSet<>();
+
+        for (Movie movie : allMovies) {
+            if (movie.getId() == null || !preferenceMovieIds.contains(movie.getId())) {
+                continue;
+            }
+
+            int rating = userRatings.getOrDefault(movie.getId(), 7);
+            float weight = toPreferenceWeight(rating);
+            if (weight <= 0) {
+                continue;
+            }
+
+            for (Genre genre : safeGenres(movie)) {
+                preferredGenres.merge(genre.getGenreName(), weight, Float::sum);
+            }
+            for (Director director : safeDirectors(movie)) {
+                if (director.getId() != null) {
+                    preferredDirectors.merge(director.getId(), weight, Float::sum);
+                }
+            }
+        }
+
+        for (Review review : userReviews) {
+            if (review.getContent() == null || review.getContent().isBlank()) {
+                continue;
+            }
+
+            float textWeight = toPreferenceWeight(review.getRating());
+            if (textWeight <= 0) {
+                continue;
+            }
+
+            preferredTextTokens.addAll(tokenize(review.getContent()));
+        }
+
+        return new PreferenceSnapshot(userRatings, preferredGenres, preferredDirectors, preferredTextTokens);
+    }
+
+    private List<Movie> rankMoviesHeuristically(List<Movie> allMovies,
+                                                Set<Long> excludedMovieIds,
+                                                PreferenceSnapshot preferenceSnapshot,
+                                                int limit) {
+        if (preferenceSnapshot.isEmpty()) {
+            return topRatedMovies(allMovies, excludedMovieIds, limit);
+        }
+
+        List<MovieScore> scored = new ArrayList<>();
+        for (Movie movie : allMovies) {
+            if (movie.getId() == null || excludedMovieIds.contains(movie.getId())) {
+                continue;
+            }
+
+            float score = 0;
+            for (Genre genre : safeGenres(movie)) {
+                score += preferenceSnapshot.preferredGenres().getOrDefault(genre.getGenreName(), 0f) * 1.6f;
+            }
+            for (Director director : safeDirectors(movie)) {
+                if (director.getId() != null) {
+                    score += preferenceSnapshot.preferredDirectors().getOrDefault(director.getId(), 0f) * 1.9f;
+                }
+            }
+
+            score += safeAverageRating(movie) * 0.45f;
+
+            if (!preferenceSnapshot.preferredTextTokens().isEmpty()) {
+                Set<String> movieTokens = tokenize(movie.getTitle() + " " + safeText(movie.getDescription()));
+                if (!movieTokens.isEmpty()) {
+                    long matches = movieTokens.stream()
+                            .filter(preferenceSnapshot.preferredTextTokens()::contains)
+                            .count();
+                    score += ((float) matches / movieTokens.size()) * 2.5f;
+                }
+            }
+
+            if (score >= MIN_SCORE) {
+                scored.add(new MovieScore(movie, score));
+            }
+        }
+
+        List<Movie> ranked = scored.stream()
+                .sorted(Comparator.comparing(MovieScore::score)
+                        .reversed()
+                        .thenComparing(movieScore -> safeTitle(movieScore.movie())))
+                .limit(limit)
+                .map(MovieScore::movie)
+                .toList();
+
+        if (!ranked.isEmpty()) {
+            return ranked;
+        }
+
+        return topRatedMovies(allMovies, excludedMovieIds, limit);
+    }
+
+    private List<Movie> buildCandidatePool(List<Movie> allMovies,
+                                           Set<Long> excludedMovieIds,
+                                           List<Movie> heuristicRankedMovies,
+                                           int candidatePoolSize) {
+        LinkedHashMap<Long, Movie> candidateMovies = new LinkedHashMap<>();
+
+        heuristicRankedMovies.stream()
+                .limit(candidatePoolSize)
+                .forEach(movie -> candidateMovies.putIfAbsent(movie.getId(), movie));
+
+        if (candidateMovies.size() < candidatePoolSize) {
+            topRatedMovies(allMovies, excludedMovieIds, candidatePoolSize).forEach(movie ->
+                    candidateMovies.putIfAbsent(movie.getId(), movie));
+        }
+
+        return candidateMovies.values().stream()
+                .limit(candidatePoolSize)
+                .toList();
+    }
+
+    private List<Movie> topRatedMovies(List<Movie> allMovies, Set<Long> excludedMovieIds, int limit) {
+        return allMovies.stream()
+                .filter(movie -> movie.getId() == null || !excludedMovieIds.contains(movie.getId()))
+                .sorted(Comparator.comparing(RecommendationServiceImpl::safeAverageRating)
+                        .reversed()
+                        .thenComparing(RecommendationServiceImpl::safeTitle))
+                .limit(limit)
+                .toList();
+    }
+
+    private String buildUserTasteProfile(List<Movie> allMovies,
+                                         List<UserMovie> userMovies,
+                                         List<Review> userReviews,
+                                         PreferenceSnapshot preferenceSnapshot) {
+        Map<Long, Movie> moviesById = allMovies.stream()
+                .filter(movie -> movie.getId() != null)
+                .collect(Collectors.toMap(Movie::getId, movie -> movie, (left, right) -> left));
+
+        Map<Long, String> directorsById = allMovies.stream()
+                .flatMap(movie -> safeDirectors(movie).stream())
+                .filter(director -> director.getId() != null)
+                .collect(Collectors.toMap(
+                        Director::getId,
+                        Director::getFullName,
+                        (left, right) -> left
+                ));
+
+        StringBuilder profile = new StringBuilder("Профиль предпочтений пользователя:\n");
+        appendPositiveReviews(profile, userReviews, moviesById);
+        appendNegativeReviews(profile, userReviews, moviesById);
+        appendToWatchList(profile, userMovies, moviesById);
+        appendPreferenceSummary(profile, preferenceSnapshot, directorsById);
+
+        if (profile.toString().trim().equals("Профиль предпочтений пользователя:")) {
+            return "Данных о предпочтениях мало. Сильнее опирайся на средний рейтинг, жанровое сходство и разнообразие рекомендаций.";
+        }
+
+        return profile.toString().trim();
+    }
+
+    private void appendPositiveReviews(StringBuilder profile, List<Review> userReviews, Map<Long, Movie> moviesById) {
+        List<Review> positiveReviews = userReviews.stream()
+                .filter(review -> review.getMovie() != null && review.getMovie().getId() != null)
+                .filter(review -> review.getRating() >= 8)
+                .sorted(Comparator.comparingInt(Review::getRating).reversed())
+                .limit(MAX_PROFILE_POSITIVE_ITEMS)
+                .toList();
+
+        if (positiveReviews.isEmpty()) {
+            return;
+        }
+
+        profile.append("Высоко оцененные фильмы:\n");
+        for (Review review : positiveReviews) {
+            Movie movie = moviesById.getOrDefault(review.getMovie().getId(), review.getMovie());
+            profile.append("- ").append(describeMovie(movie))
+                    .append(" | оценка=").append(review.getRating()).append("/10");
+
+            if (review.getContent() != null && !review.getContent().isBlank()) {
+                profile.append(" | отзыв=").append(truncate(review.getContent().trim(), MAX_REVIEW_EXCERPT_LENGTH));
+            }
+            profile.append("\n");
+        }
+        profile.append("\n");
+    }
+
+    private void appendNegativeReviews(StringBuilder profile, List<Review> userReviews, Map<Long, Movie> moviesById) {
+        List<Review> negativeReviews = userReviews.stream()
+                .filter(review -> review.getMovie() != null && review.getMovie().getId() != null)
+                .filter(review -> review.getRating() <= 5)
+                .sorted(Comparator.comparingInt(Review::getRating))
+                .limit(MAX_PROFILE_NEGATIVE_ITEMS)
+                .toList();
+
+        if (negativeReviews.isEmpty()) {
+            return;
+        }
+
+        profile.append("Низко оцененные фильмы:\n");
+        for (Review review : negativeReviews) {
+            Movie movie = moviesById.getOrDefault(review.getMovie().getId(), review.getMovie());
+            profile.append("- ").append(describeMovie(movie))
+                    .append(" | оценка=").append(review.getRating()).append("/10");
+
+            if (review.getContent() != null && !review.getContent().isBlank()) {
+                profile.append(" | отзыв=").append(truncate(review.getContent().trim(), MAX_REVIEW_EXCERPT_LENGTH));
+            }
+            profile.append("\n");
+        }
+        profile.append("\n");
+    }
+
+    private void appendToWatchList(StringBuilder profile, List<UserMovie> userMovies, Map<Long, Movie> moviesById) {
+        List<Movie> plannedMovies = userMovies.stream()
+                .filter(userMovie -> Type.TO_WATCH.equals(userMovie.getType()))
+                .map(UserMovie::getMovie)
+                .filter(Objects::nonNull)
+                .map(movie -> movie.getId() == null ? movie : moviesById.getOrDefault(movie.getId(), movie))
+                .limit(MAX_PROFILE_TO_WATCH_ITEMS)
+                .toList();
+
+        if (plannedMovies.isEmpty()) {
+            return;
+        }
+
+        profile.append("Фильмы в списке \"Буду смотреть\":\n");
+        for (Movie movie : plannedMovies) {
+            profile.append("- ").append(describeMovie(movie)).append("\n");
+        }
+        profile.append("\n");
+    }
+
+    private void appendPreferenceSummary(StringBuilder profile,
+                                         PreferenceSnapshot preferenceSnapshot,
+                                         Map<Long, String> directorsById) {
+        List<String> topGenres = preferenceSnapshot.preferredGenres().entrySet().stream()
+                .sorted(Map.Entry.<String, Float>comparingByValue().reversed())
+                .limit(4)
+                .map(Map.Entry::getKey)
+                .toList();
+
+        List<String> topDirectors = preferenceSnapshot.preferredDirectors().entrySet().stream()
+                .sorted(Map.Entry.<Long, Float>comparingByValue().reversed())
+                .map(Map.Entry::getKey)
+                .map(directorsById::get)
+                .filter(Objects::nonNull)
+                .limit(3)
+                .toList();
+
+        List<String> topKeywords = preferenceSnapshot.preferredTextTokens().stream()
+                .sorted()
+                .limit(10)
+                .toList();
+
+        if (topGenres.isEmpty() && topDirectors.isEmpty() && topKeywords.isEmpty()) {
+            return;
+        }
+
+        profile.append("Сводка предпочтений:\n");
+        if (!topGenres.isEmpty()) {
+            profile.append("- вероятно любимые жанры: ").append(String.join(", ", topGenres)).append("\n");
+        }
+        if (!topDirectors.isEmpty()) {
+            profile.append("- вероятно интересные режиссеры: ").append(String.join(", ", topDirectors)).append("\n");
+        }
+        if (!topKeywords.isEmpty()) {
+            profile.append("- ключевые темы из отзывов: ").append(String.join(", ", topKeywords)).append("\n");
+        }
+        profile.append("\n");
+    }
+
+    private String describeMovie(Movie movie) {
+        String year = movie.getReleaseDate() != null ? String.valueOf(movie.getReleaseDate().getYear()) : "год не указан";
+        String genres = safeGenres(movie).stream()
+                .map(Genre::getGenreName)
+                .sorted()
+                .collect(Collectors.joining(", "));
+        String directors = safeDirectors(movie).stream()
+                .map(Director::getFullName)
+                .sorted()
+                .collect(Collectors.joining(", "));
+
+        return safeText(movie.getTitle())
+                + " (" + year + ")"
+                + (genres.isBlank() ? "" : " | жанры: " + genres)
+                + (directors.isBlank() ? "" : " | режиссеры: " + directors);
+    }
+
+    private List<Movie> mapAiIdsToMovies(List<Long> aiRankedIds, List<Movie> candidateMovies) {
+        if (aiRankedIds == null || aiRankedIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Movie> candidateMoviesById = candidateMovies.stream()
+                .filter(movie -> movie.getId() != null)
+                .collect(Collectors.toMap(
+                        Movie::getId,
+                        movie -> movie,
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ));
+
+        LinkedHashMap<Long, Movie> orderedMovies = new LinkedHashMap<>();
+        for (Long movieId : aiRankedIds) {
+            Movie movie = candidateMoviesById.get(movieId);
+            if (movie != null) {
+                orderedMovies.putIfAbsent(movieId, movie);
+            }
+        }
+
+        return List.copyOf(orderedMovies.values());
+    }
+
+    private List<Movie> mergeRecommendations(List<Movie> aiRankedMovies,
+                                             List<Movie> fallbackRecommendations,
+                                             int limit) {
+        LinkedHashMap<Long, Movie> mergedMovies = new LinkedHashMap<>();
+
+        aiRankedMovies.forEach(movie -> mergedMovies.putIfAbsent(movie.getId(), movie));
+        fallbackRecommendations.forEach(movie -> mergedMovies.putIfAbsent(movie.getId(), movie));
+
+        return mergedMovies.values().stream()
+                .limit(limit)
+                .toList();
+    }
+
+    private record PreferenceSnapshot(
+            Map<Long, Integer> userRatings,
+            Map<String, Float> preferredGenres,
+            Map<Long, Float> preferredDirectors,
+            Set<String> preferredTextTokens
+    ) {
+        private boolean isEmpty() {
+            return preferredGenres.isEmpty() && preferredDirectors.isEmpty() && preferredTextTokens.isEmpty();
+        }
     }
 
     private record MovieScore(Movie movie, float score) {

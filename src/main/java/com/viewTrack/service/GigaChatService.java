@@ -8,4 +8,6 @@ import java.util.List;
 public interface GigaChatService {
 
     String generateMovieReview(Movie movie, List<Review> reviews);
+
+    List<Long> rankMovieRecommendations(String userTasteProfile, List<Movie> candidateMovies, int limit);
 }
