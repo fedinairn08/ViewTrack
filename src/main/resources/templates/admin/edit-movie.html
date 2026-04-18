@@ -75,6 +75,7 @@
 
   <form id="editMovieForm" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow">
     <input type="hidden" name="id" th:value="${movie.id}">
+  <input type="hidden" id="deletePoster" name="deletePoster" value="false">
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
@@ -195,6 +196,8 @@
     const posterPlaceholder = document.getElementById('posterPlaceholder');
     const posterPreview = document.getElementById('posterPreview');
     const posterImage = document.getElementById('posterImage');
+    const removePosterBtn = document.getElementById('removePosterBtn');
+    const deletePosterInput = document.getElementById('deletePoster');
     const directorSearchInput = document.getElementById('directorSearchInput');
     const directorSearchEmpty = document.getElementById('directorSearchEmpty');
 
@@ -216,6 +219,7 @@
         const reader = new FileReader();
 
         reader.onload = function(event) {
+          deletePosterInput.value = 'false';
           posterImage.src = event.target.result;
           posterPlaceholder.classList.add('hidden');
           posterPreview.classList.remove('hidden');
@@ -312,7 +316,6 @@
         formData.append('poster', posterInput.files[0]);
       }
 
-      const deletePosterInput = document.getElementById('deletePoster');
       if (deletePosterInput && deletePosterInput.value === 'true') {
         formData.append('deletePoster', 'true');
       }
@@ -350,22 +353,14 @@
     const posterPlaceholder = document.getElementById('posterPlaceholder');
     const posterPreview = document.getElementById('posterPreview');
     const removePosterBtn = document.getElementById('removePosterBtn');
+    const deletePosterInput = document.getElementById('deletePoster');
 
     posterInput.value = '';
 
     posterPreview.classList.add('hidden');
     posterPlaceholder.classList.remove('hidden');
     removePosterBtn.classList.add('hidden');
-
-    let deletePosterInput = document.getElementById('deletePoster');
-    if (!deletePosterInput) {
-      deletePosterInput = document.createElement('input');
-      deletePosterInput.type = 'hidden';
-      deletePosterInput.id = 'deletePoster';
-      deletePosterInput.name = 'deletePoster';
-      deletePosterInput.value = 'true';
-      document.getElementById('editMovieForm').appendChild(deletePosterInput);
-    }
+    deletePosterInput.value = 'true';
   }
 
   function initializeSelectedGenres() {

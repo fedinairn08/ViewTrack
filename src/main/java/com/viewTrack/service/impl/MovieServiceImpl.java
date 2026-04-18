@@ -162,15 +162,15 @@ public class MovieServiceImpl implements MovieService {
             }
         }
 
-        if ("true".equals(deletePoster)) {
+        if (poster != null && !poster.isEmpty()) {
+            uploadPoster(movie, poster);
+        } else if ("true".equals(deletePoster)) {
             if (movie.getPoster() != null) {
                 Image oldImage = movie.getPoster();
                 imageService.delete(oldImage.getFilename());
                 movie.setPoster(null);
                 imageRepository.delete(oldImage);
             }
-        } else if (poster != null && !poster.isEmpty()) {
-            uploadPoster(movie, poster);
         }
 
         return movieRepository.save(movie);

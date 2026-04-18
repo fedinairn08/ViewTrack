@@ -160,10 +160,10 @@
                 <div th:if="${director.photo?.filename != null}">
                     <img th:src="'/api/image/get/' + ${director.photo.filename}"
                          th:alt="${director.fullName}"
-                         class="w-full h-64 object-cover cursor-default">
+                         class="w-full h-80 object-cover cursor-default">
                 </div>
                 <div th:if="${director.photo?.filename == null}" 
-                     class="w-full h-64 bg-gray-200 flex items-center justify-center">
+                     class="w-full h-80 bg-gray-200 flex items-center justify-center">
                     <div class="text-center">
                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L21 12.172V20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />

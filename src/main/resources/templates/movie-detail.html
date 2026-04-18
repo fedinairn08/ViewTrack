@@ -231,7 +231,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     <div th:each="director : ${movie.directors}" class="bg-white rounded-lg shadow overflow-hidden transition-transform hover:scale-105">
                         <a th:href="@{'/api/movie/director/' + ${director.id}}" class="block">
-                            <div class="w-full h-32">
+                            <div class="w-full h-44">
                                 <img th:if="${director.photo != null}" 
                                      th:src="'/api/image/get/' + ${director.photo.filename}"
                                      th:alt="${director.fullName}"
