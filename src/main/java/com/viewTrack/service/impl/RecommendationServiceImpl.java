@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -258,6 +260,92 @@ public class RecommendationServiceImpl implements RecommendationService {
             idx += Character.charCount(cp);
         }
         return t;
+    }
+
+    private static String polishRecommendationExplanation(String raw, Movie movie) {
+        if (raw == null || raw.isBlank()) {
+            return raw;
+        }
+        String s = ensureSentenceCase(raw.strip());
+        s = deFluffUserPhrasing(s);
+        s = stripSelfComparisonToCandidateTitle(s, movie != null ? safeTitle(movie) : "");
+        s = collapseWhitespace(s);
+        return ensureTrailingPeriod(s);
+    }
+
+    private static String collapseWhitespace(String s) {
+        if (s == null) {
+            return null;
+        }
+        return s.replaceAll("\\s{2,}", " ").strip();
+    }
+
+    private static String ensureTrailingPeriod(String s) {
+        if (s == null || s.isBlank()) {
+            return s;
+        }
+        String t = s.strip();
+        char last = t.charAt(t.length() - 1);
+        if (last == '.' || last == '!' || last == '?' || last == '…') {
+            return t;
+        }
+        return t + '.';
+    }
+
+    private static String deFluffUserPhrasing(String s) {
+        if (s == null) {
+            return null;
+        }
+        String t = s;
+        String[][] repl = {
+                {"(?iu)\\bдля пользователя\\b", "вам"},
+                {"(?iu)\\bу пользователя\\b", "у вас"},
+                {"(?iu)\\bк пользователю\\b", "вам"},
+                {"(?iu)\\bинтересы пользователя\\b", "ваш вкус"},
+                {"(?iu)\\bинтересам пользователя\\b", "вашим вкусам"},
+                {"(?iu)\\bэтот пользователь\\b", "вы"},
+                {"(?iu)\\bданный пользователь\\b", "вы"},
+                {"(?iu)\\bсам пользователь\\b", "вы"},
+                {"(?iu)\\bпользователь считает\\b", "вы считаете"},
+                {"(?iu)\\bпользователь оценил\\b", "вы оценили"},
+                {"(?iu)\\bпользователь любит\\b", "вы любите"},
+                {"(?iu)\\b,\\s*пользователь\\b", ", вы"},
+        };
+        for (String[] p : repl) {
+            t = t.replaceAll(p[0], p[1]);
+        }
+        t = t.replaceAll("(?iu)\\s+пользователь(\\s)", " вы$1");
+        t = t.replaceAll("(?iu)^пользователь(\\s)", "Вы$1");
+        return t;
+    }
+
+    /**
+     * Убирает фразы вроде «любимый фильм "Назад в будущее"», когда рекомендуется тот же фильм.
+     */
+    private static String stripSelfComparisonToCandidateTitle(String reason, String movieTitle) {
+        if (reason == null || movieTitle == null || movieTitle.isBlank()) {
+            return reason;
+        }
+        String title = movieTitle.strip();
+        if (title.length() < 2) {
+            return reason;
+        }
+        String low = reason.toLowerCase(Locale.ROOT);
+        String titleLow = title.toLowerCase(Locale.ROOT);
+        if (!low.contains(titleLow)) {
+            return reason;
+        }
+        String quoted = Pattern.quote(title);
+        Pattern selfRef = Pattern.compile(
+                "(?iu)[^.?!]*(?:любим(ым|ого|ому|ый)\\s+фильм(ом|а)?|схож(ие|их)?\\s+предпочтения|в\\s+том\\s+же\\s+ключе|в\\s+духе)[^.?!]*[«\"']?"
+                        + quoted + "[»\"']?[^.?!]*[.?!]?");
+        Matcher m = selfRef.matcher(reason);
+        if (!m.find()) {
+            return reason;
+        }
+        String cleaned = m.replaceFirst(" ").strip();
+        cleaned = cleaned.replaceAll("^[;,\\s–\\-:]+", "").replaceAll("\\s{2,}", " ");
+        return cleaned.length() < 12 ? reason : cleaned;
     }
 
     private PreferenceSnapshot buildPreferenceSnapshot(List<Movie> allMovies,
@@ -615,7 +703,7 @@ public class RecommendationServiceImpl implements RecommendationService {
             if (aiExplanationByMovieId != null && movie.getId() != null) {
                 String text = aiExplanationByMovieId.get(movie.getId());
                 if (text != null && !text.isBlank()) {
-                    mergedExplanations.putIfAbsent(movie.getId(), ensureSentenceCase(text));
+                    mergedExplanations.putIfAbsent(movie.getId(), polishRecommendationExplanation(text, movie));
                 }
             }
         }
