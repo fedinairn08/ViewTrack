@@ -3,6 +3,7 @@ package com.viewTrack.controller;
 import com.viewTrack.data.entity.*;
 import com.viewTrack.data.repository.ReviewRepository;
 import com.viewTrack.dto.response.ExternalReviewResponseDto;
+import com.viewTrack.dto.response.RecommendationsResult;
 import com.viewTrack.exeption.ResourceNotFoundException;
 import com.viewTrack.service.*;
 import com.viewTrack.utils.AuthUtils;
@@ -130,9 +131,10 @@ public class MovieController {
         User currentUser = authUtils.getUserEntity();
         int recommendationsLimit = limit == null ? 12 : limit;
 
-        List<Movie> recommendedMovies = recommendationService.getRecommendations(currentUser, recommendationsLimit);
+        RecommendationsResult recommendations = recommendationService.getRecommendations(currentUser, recommendationsLimit);
 
-        model.addAttribute("movies", recommendedMovies);
+        model.addAttribute("movies", recommendations.movies());
+        model.addAttribute("recommendationExplanations", recommendations.aiExplanationByMovieId());
         model.addAttribute("user", currentUser);
         model.addAttribute("title", "Рекомендации");
         model.addAttribute("active", "recommendations");

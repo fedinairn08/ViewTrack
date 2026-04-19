@@ -6,7 +6,9 @@ import com.viewTrack.data.entity.Review;
 import com.viewTrack.data.repository.AiReviewRepository;
 import com.viewTrack.data.repository.MovieRepository;
 import com.viewTrack.data.repository.ReviewRepository;
+import com.viewTrack.dto.response.ExternalReviewResponseDto;
 import com.viewTrack.service.AiReviewService;
+import com.viewTrack.service.ExternalReviewService;
 import com.viewTrack.service.GigaChatService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +27,9 @@ public class AiReviewServiceImpl implements AiReviewService {
     private final MovieRepository movieRepository;
     private final ReviewRepository reviewRepository;
     private final AiReviewRepository aiReviewRepository;
+    private final ExternalReviewService externalReviewService;
 
-    private static final int MIN_REVIEWS_FOR_AI_REVIEW = 1;
+    private static final int MAX_KINOPOISK_REVIEWS_FOR_AI = 5;
 
     @Override
     public AiReview getOrGenerateReviewForMovie(Long movieId) {
@@ -60,23 +63,31 @@ public class AiReviewServiceImpl implements AiReviewService {
     }
 
     private AiReview generateAndSaveReview(Movie movie) {
-        List<Review> reviews = reviewRepository.findByMovieId(movie.getId())
+        List<Review> siteReviews = reviewRepository.findByMovieId(movie.getId())
                 .stream()
-                .filter(review -> review.getContent() != null)
+                .filter(review -> review.getContent() != null && !review.getContent().isBlank())
                 .collect(Collectors.toList());
 
+        List<ExternalReviewResponseDto> kinopoiskReviews = List.of();
+        if (siteReviews.isEmpty() && externalReviewService.isConfigured()) {
+            kinopoiskReviews = externalReviewService.getReviewsForMovie(movie).stream()
+                    .filter(r -> r.getContent() != null && !r.getContent().isBlank())
+                    .limit(MAX_KINOPOISK_REVIEWS_FOR_AI)
+                    .toList();
+        }
 
-        
-        if (reviews.size() < MIN_REVIEWS_FOR_AI_REVIEW) {
+        if (siteReviews.isEmpty() && kinopoiskReviews.isEmpty()) {
             return null;
         }
 
-        String reviewContent = gigaChatService.generateMovieReview(movie, reviews);
-        
+        String reviewContent = gigaChatService.generateMovieReview(movie, siteReviews, kinopoiskReviews);
+
+        int sourcesCount = siteReviews.size() + kinopoiskReviews.size();
+
         AiReview aiReview = AiReview.builder()
                 .movie(movie)
                 .content(reviewContent)
-                .reviewsCountAtGeneration(reviews.size())
+                .reviewsCountAtGeneration(sourcesCount)
                 .build();
 
         return aiReviewRepository.save(aiReview);

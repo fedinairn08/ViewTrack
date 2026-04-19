@@ -5,6 +5,8 @@ import com.viewTrack.data.enums.Type;
 import com.viewTrack.data.repository.MovieRepository;
 import com.viewTrack.data.repository.ReviewRepository;
 import com.viewTrack.data.repository.UserMovieRepository;
+import com.viewTrack.dto.response.AiRecommendationRankingResult;
+import com.viewTrack.dto.response.RecommendationsResult;
 import com.viewTrack.service.GigaChatService;
 import com.viewTrack.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
@@ -50,51 +52,60 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final GigaChatService gigaChatService;
 
     @Override
-    public List<Movie> getRecommendations(User user, int limit) {
+    public RecommendationsResult getRecommendations(User user, int limit) {
         int effectiveLimit = limit > 0 ? limit : DEFAULT_LIMIT;
         int candidatePoolSize = resolveCandidatePoolSize(effectiveLimit);
         List<Movie> allMovies = movieRepository.findAllWithGenresAndDirectors();
         if (allMovies.isEmpty()) {
-            return List.of();
+            return RecommendationsResult.ofMoviesOnly(List.of());
         }
 
         List<UserMovie> userMovies = userMovieRepository.findByUser(user);
-        Set<Long> excludedMovieIds = extractExcludedMovieIds(userMovies);
+        Set<Long> excludedMovieIds = new HashSet<>(extractExcludedMovieIds(userMovies));
 
         List<Review> userReviews = reviewRepository.findByUser(user);
         if (userReviews.isEmpty() && excludedMovieIds.isEmpty()) {
-            return topRatedMovies(allMovies, excludedMovieIds, effectiveLimit);
+            return RecommendationsResult.ofMoviesOnly(topRatedMovies(allMovies, excludedMovieIds, Set.of(), effectiveLimit));
         }
 
         Map<Long, Integer> userRatings = extractUserRatings(userReviews);
-        Set<Long> preferenceMovieIds = new HashSet<>(excludedMovieIds);
-        preferenceMovieIds.addAll(userRatings.keySet());
+        excludedMovieIds.addAll(userRatings.keySet());
 
-        PreferenceSnapshot preferenceSnapshot = buildPreferenceSnapshot(allMovies, preferenceMovieIds, userReviews, userRatings);
+        Set<Long> preferenceMovieIds = new HashSet<>(excludedMovieIds);
+
+        Set<Long> avoidedDirectorIds = computeAvoidedDirectorIds(allMovies, userRatings);
+        PreferenceSnapshot preferenceSnapshot = buildPreferenceSnapshot(allMovies, preferenceMovieIds, userReviews, userRatings, avoidedDirectorIds);
         List<Movie> heuristicRankedMovies = rankMoviesHeuristically(allMovies, excludedMovieIds, preferenceSnapshot, candidatePoolSize);
         List<Movie> fallbackRecommendations = heuristicRankedMovies.stream()
                 .limit(effectiveLimit)
                 .toList();
 
         if (heuristicRankedMovies.isEmpty()) {
-            return topRatedMovies(allMovies, excludedMovieIds, effectiveLimit);
+            return RecommendationsResult.ofMoviesOnly(topRatedMovies(allMovies, excludedMovieIds, avoidedDirectorIds, effectiveLimit));
         }
 
-        List<Movie> candidateMovies = buildCandidatePool(allMovies, excludedMovieIds, heuristicRankedMovies, candidatePoolSize);
+        List<Movie> candidateMovies = buildCandidatePool(allMovies, excludedMovieIds, preferenceSnapshot, heuristicRankedMovies, candidatePoolSize);
         if (candidateMovies.isEmpty()) {
-            return fallbackRecommendations;
+            return RecommendationsResult.ofMoviesOnly(fallbackRecommendations);
         }
 
         String userTasteProfile = buildUserTasteProfile(allMovies, userMovies, userReviews, preferenceSnapshot);
-        List<Long> aiRankedIds = gigaChatService.rankMovieRecommendations(userTasteProfile, candidateMovies, effectiveLimit);
-        List<Movie> aiRankedMovies = mapAiIdsToMovies(aiRankedIds, candidateMovies);
+        AiRecommendationRankingResult aiRanking = gigaChatService.rankMovieRecommendations(userTasteProfile, candidateMovies, effectiveLimit);
+        List<Movie> aiRankedMovies = mapAiIdsToMovies(aiRanking.recommendedIds(), candidateMovies);
+        aiRankedMovies = filterOutAvoidedDirectors(aiRankedMovies, preferenceSnapshot.avoidedDirectorIds());
 
         if (aiRankedMovies.isEmpty()) {
             log.info("AI не вернул валидный список рекомендаций, используется эвристический fallback");
-            return fallbackRecommendations;
+            return RecommendationsResult.ofMoviesOnly(fallbackRecommendations);
         }
 
-        return mergeRecommendations(aiRankedMovies, fallbackRecommendations, effectiveLimit);
+        MergedRecommendations merged = mergeRecommendations(
+                aiRankedMovies,
+                aiRanking.explanationByMovieId(),
+                fallbackRecommendations,
+                effectiveLimit
+        );
+        return new RecommendationsResult(merged.movies(), merged.explanationByMovieId());
     }
 
     private static String safeText(String value) {
@@ -171,10 +182,89 @@ public class RecommendationServiceImpl implements RecommendationService {
                 ));
     }
 
+    /**
+     * Режиссёр в «чёрном списке», если по его фильмам у пользователя была оценка не выше 3,
+     * при этом ни один его фильм не получил у пользователя 8+ (иначе вкус смешанный — не отсекаем).
+     */
+    private Set<Long> computeAvoidedDirectorIds(List<Movie> allMovies, Map<Long, Integer> userRatings) {
+        if (userRatings == null || userRatings.isEmpty()) {
+            return Set.of();
+        }
+        Map<Long, Movie> byId = allMovies.stream()
+                .filter(m -> m.getId() != null)
+                .collect(Collectors.toMap(Movie::getId, m -> m, (a, b) -> a));
+        Map<Long, int[]> minMaxByDirector = new HashMap<>();
+        for (Map.Entry<Long, Integer> e : userRatings.entrySet()) {
+            Movie movie = byId.get(e.getKey());
+            if (movie == null) {
+                continue;
+            }
+            int rating = e.getValue();
+            for (Director director : safeDirectors(movie)) {
+                if (director.getId() == null) {
+                    continue;
+                }
+                minMaxByDirector.merge(director.getId(), new int[]{rating, rating},
+                        (a, b) -> new int[]{Math.min(a[0], b[0]), Math.max(a[1], b[1])});
+            }
+        }
+        Set<Long> avoided = new HashSet<>();
+        for (Map.Entry<Long, int[]> e : minMaxByDirector.entrySet()) {
+            int min = e.getValue()[0];
+            int max = e.getValue()[1];
+            if (min <= 3 && max < 8) {
+                avoided.add(e.getKey());
+            }
+        }
+        return Set.copyOf(avoided);
+    }
+
+    private static boolean movieHasAvoidedDirector(Movie movie, Set<Long> avoidedDirectorIds) {
+        if (avoidedDirectorIds == null || avoidedDirectorIds.isEmpty()) {
+            return false;
+        }
+        for (Director director : safeDirectors(movie)) {
+            if (director.getId() != null && avoidedDirectorIds.contains(director.getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<Movie> filterOutAvoidedDirectors(List<Movie> movies, Set<Long> avoidedDirectorIds) {
+        if (movies == null || movies.isEmpty() || avoidedDirectorIds == null || avoidedDirectorIds.isEmpty()) {
+            return movies;
+        }
+        return movies.stream()
+                .filter(m -> !movieHasAvoidedDirector(m, avoidedDirectorIds))
+                .toList();
+    }
+
+    private static String ensureSentenceCase(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return raw;
+        }
+        String t = raw.strip();
+        int idx = 0;
+        while (idx < t.length()) {
+            int cp = t.codePointAt(idx);
+            if (Character.isLetter(cp)) {
+                int upper = Character.toUpperCase(cp);
+                if (upper != cp) {
+                    return t.substring(0, idx) + new String(Character.toChars(upper)) + t.substring(idx + Character.charCount(cp));
+                }
+                return t;
+            }
+            idx += Character.charCount(cp);
+        }
+        return t;
+    }
+
     private PreferenceSnapshot buildPreferenceSnapshot(List<Movie> allMovies,
                                                       Set<Long> preferenceMovieIds,
                                                       List<Review> userReviews,
-                                                      Map<Long, Integer> userRatings) {
+                                                      Map<Long, Integer> userRatings,
+                                                      Set<Long> avoidedDirectorIds) {
         Map<String, Float> preferredGenres = new HashMap<>();
         Map<Long, Float> preferredDirectors = new HashMap<>();
         Set<String> preferredTextTokens = new HashSet<>();
@@ -213,7 +303,8 @@ public class RecommendationServiceImpl implements RecommendationService {
             preferredTextTokens.addAll(tokenize(review.getContent()));
         }
 
-        return new PreferenceSnapshot(userRatings, preferredGenres, preferredDirectors, preferredTextTokens);
+        Set<Long> avoided = avoidedDirectorIds == null ? Set.of() : avoidedDirectorIds;
+        return new PreferenceSnapshot(userRatings, preferredGenres, preferredDirectors, preferredTextTokens, avoided);
     }
 
     private List<Movie> rankMoviesHeuristically(List<Movie> allMovies,
@@ -221,12 +312,15 @@ public class RecommendationServiceImpl implements RecommendationService {
                                                 PreferenceSnapshot preferenceSnapshot,
                                                 int limit) {
         if (preferenceSnapshot.isEmpty()) {
-            return topRatedMovies(allMovies, excludedMovieIds, limit);
+            return topRatedMovies(allMovies, excludedMovieIds, preferenceSnapshot.avoidedDirectorIds(), limit);
         }
 
         List<MovieScore> scored = new ArrayList<>();
         for (Movie movie : allMovies) {
             if (movie.getId() == null || excludedMovieIds.contains(movie.getId())) {
+                continue;
+            }
+            if (movieHasAvoidedDirector(movie, preferenceSnapshot.avoidedDirectorIds())) {
                 continue;
             }
 
@@ -269,11 +363,12 @@ public class RecommendationServiceImpl implements RecommendationService {
             return ranked;
         }
 
-        return topRatedMovies(allMovies, excludedMovieIds, limit);
+        return topRatedMovies(allMovies, excludedMovieIds, preferenceSnapshot.avoidedDirectorIds(), limit);
     }
 
     private List<Movie> buildCandidatePool(List<Movie> allMovies,
                                            Set<Long> excludedMovieIds,
+                                           PreferenceSnapshot preferenceSnapshot,
                                            List<Movie> heuristicRankedMovies,
                                            int candidatePoolSize) {
         LinkedHashMap<Long, Movie> candidateMovies = new LinkedHashMap<>();
@@ -283,7 +378,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .forEach(movie -> candidateMovies.putIfAbsent(movie.getId(), movie));
 
         if (candidateMovies.size() < candidatePoolSize) {
-            topRatedMovies(allMovies, excludedMovieIds, candidatePoolSize).forEach(movie ->
+            topRatedMovies(allMovies, excludedMovieIds, preferenceSnapshot.avoidedDirectorIds(), candidatePoolSize).forEach(movie ->
                     candidateMovies.putIfAbsent(movie.getId(), movie));
         }
 
@@ -292,9 +387,14 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .toList();
     }
 
-    private List<Movie> topRatedMovies(List<Movie> allMovies, Set<Long> excludedMovieIds, int limit) {
+    private List<Movie> topRatedMovies(List<Movie> allMovies,
+                                       Set<Long> excludedMovieIds,
+                                       Set<Long> avoidedDirectorIds,
+                                       int limit) {
+        Set<Long> avoided = avoidedDirectorIds == null ? Set.of() : avoidedDirectorIds;
         return allMovies.stream()
                 .filter(movie -> movie.getId() == null || !excludedMovieIds.contains(movie.getId()))
+                .filter(movie -> !movieHasAvoidedDirector(movie, avoided))
                 .sorted(Comparator.comparing(RecommendationServiceImpl::safeAverageRating)
                         .reversed()
                         .thenComparing(RecommendationServiceImpl::safeTitle))
@@ -323,6 +423,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         appendPositiveReviews(profile, userReviews, moviesById);
         appendNegativeReviews(profile, userReviews, moviesById);
         appendToWatchList(profile, userMovies, moviesById);
+        appendAvoidedDirectors(profile, preferenceSnapshot, directorsById);
         appendPreferenceSummary(profile, preferenceSnapshot, directorsById);
 
         if (profile.toString().trim().equals("Профиль предпочтений пользователя:")) {
@@ -404,6 +505,22 @@ public class RecommendationServiceImpl implements RecommendationService {
         profile.append("\n");
     }
 
+    private void appendAvoidedDirectors(StringBuilder profile,
+                                        PreferenceSnapshot preferenceSnapshot,
+                                        Map<Long, String> directorsById) {
+        if (preferenceSnapshot.avoidedDirectorIds().isEmpty()) {
+            return;
+        }
+        profile.append("Не предлагать фильмы этих режиссёров (у пользователя к их работам низкие оценки без контрастных высоких):\n");
+        for (Long directorId : preferenceSnapshot.avoidedDirectorIds()) {
+            String name = directorsById.get(directorId);
+            if (name != null && !name.isBlank()) {
+                profile.append("- ").append(name).append("\n");
+            }
+        }
+        profile.append("\n");
+    }
+
     private void appendPreferenceSummary(StringBuilder profile,
                                          PreferenceSnapshot preferenceSnapshot,
                                          Map<Long, String> directorsById) {
@@ -416,6 +533,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<String> topDirectors = preferenceSnapshot.preferredDirectors().entrySet().stream()
                 .sorted(Map.Entry.<Long, Float>comparingByValue().reversed())
                 .map(Map.Entry::getKey)
+                .filter(id -> !preferenceSnapshot.avoidedDirectorIds().contains(id))
                 .map(directorsById::get)
                 .filter(Objects::nonNull)
                 .limit(3)
@@ -485,25 +603,55 @@ public class RecommendationServiceImpl implements RecommendationService {
         return List.copyOf(orderedMovies.values());
     }
 
-    private List<Movie> mergeRecommendations(List<Movie> aiRankedMovies,
-                                             List<Movie> fallbackRecommendations,
-                                             int limit) {
+    private MergedRecommendations mergeRecommendations(List<Movie> aiRankedMovies,
+                                                       Map<Long, String> aiExplanationByMovieId,
+                                                       List<Movie> fallbackRecommendations,
+                                                       int limit) {
         LinkedHashMap<Long, Movie> mergedMovies = new LinkedHashMap<>();
+        LinkedHashMap<Long, String> mergedExplanations = new LinkedHashMap<>();
 
-        aiRankedMovies.forEach(movie -> mergedMovies.putIfAbsent(movie.getId(), movie));
+        for (Movie movie : aiRankedMovies) {
+            mergedMovies.putIfAbsent(movie.getId(), movie);
+            if (aiExplanationByMovieId != null && movie.getId() != null) {
+                String text = aiExplanationByMovieId.get(movie.getId());
+                if (text != null && !text.isBlank()) {
+                    mergedExplanations.putIfAbsent(movie.getId(), ensureSentenceCase(text));
+                }
+            }
+        }
         fallbackRecommendations.forEach(movie -> mergedMovies.putIfAbsent(movie.getId(), movie));
 
-        return mergedMovies.values().stream()
+        List<Movie> limitedMovies = mergedMovies.values().stream()
                 .limit(limit)
                 .toList();
+
+        LinkedHashMap<Long, String> explanationsForResult = new LinkedHashMap<>();
+        for (Movie movie : limitedMovies) {
+            if (movie.getId() != null) {
+                String explanation = mergedExplanations.get(movie.getId());
+                if (explanation != null) {
+                    explanationsForResult.put(movie.getId(), explanation);
+                }
+            }
+        }
+
+        return new MergedRecommendations(limitedMovies, explanationsForResult.isEmpty() ? Map.of() : Map.copyOf(explanationsForResult));
+    }
+
+    private record MergedRecommendations(List<Movie> movies, Map<Long, String> explanationByMovieId) {
     }
 
     private record PreferenceSnapshot(
             Map<Long, Integer> userRatings,
             Map<String, Float> preferredGenres,
             Map<Long, Float> preferredDirectors,
-            Set<String> preferredTextTokens
+            Set<String> preferredTextTokens,
+            Set<Long> avoidedDirectorIds
     ) {
+        private PreferenceSnapshot {
+            avoidedDirectorIds = avoidedDirectorIds == null ? Set.of() : Set.copyOf(avoidedDirectorIds);
+        }
+
         private boolean isEmpty() {
             return preferredGenres.isEmpty() && preferredDirectors.isEmpty() && preferredTextTokens.isEmpty();
         }
