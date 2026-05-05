@@ -30,6 +30,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     private static final int MAX_PROFILE_POSITIVE_ITEMS = 6;
     private static final int MAX_PROFILE_NEGATIVE_ITEMS = 4;
     private static final int MAX_PROFILE_TO_WATCH_ITEMS = 6;
+    private static final int MIN_TEXT_REVIEW_RATING = 7;
     private static final int MAX_REVIEW_EXCERPT_LENGTH = 180;
     private static final float MIN_SCORE = 0.35f;
     private static final Set<String> STOP_WORDS = Set.of("и", "в", "во", "на", "по", "с", "со", "а", "но", "или",
@@ -383,8 +384,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 continue;
             }
 
-            float textWeight = toPreferenceWeight(review.getRating());
-            if (textWeight <= 0) {
+            if (review.getRating() < MIN_TEXT_REVIEW_RATING) {
                 continue;
             }
 
